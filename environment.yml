@@ -1,0 +1,6 @@
+name: prop-card-reader
+channels:
+  - conda-forge
+dependencies:
+  - python=3.11
+prefix: /Users/kevinkubeck/miniforge3/envs/prop-card-reader

@@ -1,0 +1,38 @@
+{
+  "fields": [
+    {
+      "name": "Botanical Name",
+      "coordinates": {
+        "x": 200,
+        "y": 100,
+        "width": 900,
+        "height": 98
+      }
+    },
+    {
+      "name": "Family Name",
+      "coordinates": {
+        "x": 965,
+        "y": 105,
+        "width": 500,
+        "height": 98
+      }
+    },
+    {
+      "name": "Date",
+      "coordinates": {
+         "x": 160,
+         "y": 345,
+         "width": 330,
+         "height": 65 }
+    },
+    {
+      "name": "Accesssion",
+      "coordinates": {
+        "x": 670,
+        "y": 650,
+        "width": 790,
+        "height": 95 }
+    }
+  ]
+}

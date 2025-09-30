@@ -3,36 +3,36 @@
     {
       "name": "Botanical Name",
       "coordinates": {
-        "x": 200,
-        "y": 100,
-        "width": 900,
-        "height": 98
+        "x": 110,
+        "y": 0,
+        "width": 1460,
+        "height": 70
       }
     },
     {
       "name": "Family Name",
       "coordinates": {
-        "x": 965,
-        "y": 105,
-        "width": 500,
-        "height": 98
+        "x": 1700,
+        "y": 20,
+        "width": 600,
+        "height": 60
       }
     },
     {
       "name": "Date",
       "coordinates": {
-         "x": 160,
-         "y": 345,
-         "width": 330,
-         "height": 65 }
+         "x": 956,
+         "y": 176,
+         "width": 336,
+         "height": 96 }
     },
     {
       "name": "Accesssion",
       "coordinates": {
-        "x": 670,
-        "y": 650,
-        "width": 790,
-        "height": 95 }
+        "x": 1450,
+        "y": 382,
+        "width": 860,
+        "height": 90 }
     }
   ]
 }

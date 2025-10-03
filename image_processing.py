@@ -3,29 +3,20 @@ import cv2
 import os
 import numpy as np
 
-def extract_fields_from_image(card_image_path, fields, output_folder="output_images/fields"):
-    """Crops individual fields from a card image based on template coordinates."""
-    os.makedirs(output_folder, exist_ok=True)
-    image = cv2.imread(card_image_path)
-    if image is None:
-        print(f"Could not read image: {card_image_path}")
-        return
-
-    base_name = os.path.basename(card_image_path).replace('.png', '')
-
-    for field in fields:
-        name = field['name']
-        coords = field['coordinates']
-        x, y, w, h = coords['x'], coords['y'], coords['width'], coords['height']
-
-        field_image = image[y:y+h, x:x+w]
-        
-        safe_name = "".join(c for c in name if c.isalnum()).rstrip()
-        field_output_path = os.path.join(output_folder, f"{base_name}_{safe_name}.png")
-        cv2.imwrite(field_output_path, field_image)
+def preprocess_field_for_ocr(field_image):
+    """
+    Cleans a field image for better OCR results using binarization.
+    """
+    # Convert the image to grayscale
+    gray = cv2.cvtColor(field_image, cv2.COLOR_BGR2GRAY)
     
-    print(f"Extracted {len(fields)} fields from {os.path.basename(card_image_path)}")
+    # Apply Otsu's Binarization to create a black and white image
+    _, processed_image = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+    
+    # Invert the image to get black text on a white background
+    processed_image = cv2.bitwise_not(processed_image)
 
+    return processed_image
 
 def align_card_to_template(card_image_path, anchor_template_paths, output_folder="output_images", target_offset=(0, 0), debug=False):
     """
@@ -37,8 +28,7 @@ def align_card_to_template(card_image_path, anchor_template_paths, output_folder
             print(f"Error: Could not read card image at {card_image_path}")
             return None
 
-        # The typo was in the next line
-        image_gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY) # <<< CORRECTED
+        image_gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
         
         best_match = {'max_val': -1, 'max_loc': None, 'template_shape': None}
 
@@ -48,17 +38,15 @@ def align_card_to_template(card_image_path, anchor_template_paths, output_folder
                 print(f"Warning: Could not read template at {template_path}, skipping.")
                 continue
             
-            # The typo was also in the next line
-            template_gray = cv2.cvtColor(template, cv2.COLOR_BGR2GRAY) # <<< CORRECTED
+            template_gray = cv2.cvtColor(template, cv2.COLOR_BGR2GRAY)
             result = cv2.matchTemplate(image_gray, template_gray, cv2.TM_CCOEFF_NORMED)
-            min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(result)
+            _, max_val, _, max_loc = cv2.minMaxLoc(result)
             
             if max_val > best_match['max_val']:
                 best_match['max_val'] = max_val
                 best_match['max_loc'] = max_loc
                 best_match['template_shape'] = template.shape[:2]
 
-        # ... (the rest of the function is the same) ...
         max_val = best_match['max_val']
         max_loc = best_match['max_loc']
 
@@ -93,3 +81,56 @@ def align_card_to_template(card_image_path, anchor_template_paths, output_folder
     except Exception as e:
         print(f"An error occurred during image alignment for {card_image_path}: {e}")
         return None
+
+def extract_fields_from_image(card_image_path, fields, output_folder="output_images/fields"):
+    """
+    Dynamically finds each field using template matching for its label, then
+    applies a relative offset to crop the data.
+    """
+    os.makedirs(output_folder, exist_ok=True)
+    image = cv2.imread(card_image_path)
+    if image is None:
+        print(f"Could not read image: {card_image_path}")
+        return
+
+    image_gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    base_name = os.path.basename(card_image_path).replace('_aligned.png', '')
+
+    for field in fields:
+        name = field['name']
+        label_templates = field['label_templates']
+        offset = field['data_offset']
+
+        best_match = {'max_val': -1, 'max_loc': None}
+
+        for template_path in label_templates:
+            template = cv2.imread(template_path, 0)
+            if template is None:
+                print(f"Warning: Could not read label template at {template_path}, skipping.")
+                continue
+            
+            result = cv2.matchTemplate(image_gray, template, cv2.TM_CCOEFF_NORMED)
+            _, max_val, _, max_loc = cv2.minMaxLoc(result)
+            
+            if max_val > best_match['max_val']:
+                best_match['max_val'] = max_val
+                best_match['max_loc'] = max_loc
+        
+        if best_match['max_val'] > 0.7:
+            label_x, label_y = best_match['max_loc']
+            
+            data_x = label_x + offset['x']
+            data_y = label_y + offset['y']
+            data_w = offset['width']
+            data_h = offset['height']
+            
+            field_image = image[data_y : data_y + data_h, data_x : data_x + data_w]
+            
+            processed_field = preprocess_field_for_ocr(field_image)
+            
+            safe_name = "".join(c for c in name if c.isalnum()).rstrip()
+            field_output_path = os.path.join(output_folder, f"{base_name}_{safe_name}.png")
+            cv2.imwrite(field_output_path, processed_field)
+            print(f"Successfully extracted field: {name} (Confidence: {best_match['max_val']:.2f})")
+        else:
+            print(f"Warning: Could not find a confident match for field '{name}' on {base_name}. Best score: {best_match['max_val']:.2f}")

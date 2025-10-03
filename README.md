@@ -42,5 +42,12 @@ This project is a Python tool to automate data extraction from digitized propaga
 
 - Pivot to "Power Path": After successful alignment, it was discovered that the internal layout of the cards themselves varied, making a single fixed-coordinate template for fields unreliable. The project is now pivoting to a more dynamic approach: finding each field label individually using template matching.
 
+- Dynamic Field Finding: Implemented the "Power Path" method, where each field's printed label is located individually using template matching before the data is extracted with a relative offset.
+
+- Iterative Tuning: Developed a workflow of testing, analyzing failures, and creating new, higher-quality templates (combining text and graphical features) to improve the success rate.
+
+- High Success Rate Achieved: Reached a high success rate (90-98%) for key fields like "Accession Number" and "Botanical Name" across multiple test batches, proving the dynamic method is robust.
+
+- System Expansion: Successfully expanded the system to extract additional, varied fields, including large text blocks like "Propagation."
 ---
 _This README will be updated as new features are added._

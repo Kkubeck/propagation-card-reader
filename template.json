@@ -17,7 +17,7 @@
         "templates/field_accession_number_v1.png",
         "templates/field_accession_number_v2.png"
       ],
-      "data_offset": { "x": 30, "y": 0, "width": 800, "height": 90 }
+      "data_offset": { "x": 70, "y": 0, "width": 900, "height": 100 }
     },
     {
       "name": "Propagation",

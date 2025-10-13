@@ -91,10 +91,12 @@ def extract_fields_from_image(card_image_path, fields, output_folder="output_ima
     image = cv2.imread(card_image_path)
     if image is None:
         print(f"Could not read image: {card_image_path}")
-        return
+        return {} # Return an empty dict on failure
 
     image_gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     base_name = os.path.basename(card_image_path).replace('_aligned.png', '')
+
+    extracted_files = {} # Initialize the dictionary
 
     for field in fields:
         name = field['name']
@@ -132,5 +134,59 @@ def extract_fields_from_image(card_image_path, fields, output_folder="output_ima
             field_output_path = os.path.join(output_folder, f"{base_name}_{safe_name}.png")
             cv2.imwrite(field_output_path, processed_field)
             print(f"Successfully extracted field: {name} (Confidence: {best_match['max_val']:.2f})")
+            
+            extracted_files[name] = field_output_path # Add the file path to the dictionary
         else:
             print(f"Warning: Could not find a confident match for field '{name}' on {base_name}. Best score: {best_match['max_val']:.2f}")
+
+    return extracted_files # Return the dictionary at the end
+
+
+def find_and_extract_single_field(card_image_path, field_definition, output_folder):
+    """
+    Finds and extracts just one specific field.
+    Returns the path to the extracted field image if successful, otherwise None.
+    """
+    os.makedirs(output_folder, exist_ok=True) # <<<--- FIX: Ensure the output directory exists
+    
+    image = cv2.imread(card_image_path)
+    if image is None:
+        return None
+    
+    # This logic is a simplified version of our multi-field extraction function
+    image_gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    base_name = os.path.basename(card_image_path).replace('_aligned.png', '')
+    
+    name = field_definition['name']
+    label_templates = field_definition['label_templates']
+    offset = field_definition['data_offset']
+
+    best_match = {'max_val': -1, 'max_loc': None}
+
+    for template_path in label_templates:
+        template = cv2.imread(template_path, 0)
+        if template is None: continue
+        
+        result = cv2.matchTemplate(image_gray, template, cv2.TM_CCOEFF_NORMED)
+        _, max_val, _, max_loc = cv2.minMaxLoc(result)
+        
+        if max_val > best_match['max_val']:
+            best_match['max_val'] = max_val
+            best_match['max_loc'] = max_loc
+    
+    if best_match['max_val'] > 0.7:
+        label_x, label_y = best_match['max_loc']
+        data_x, data_y = label_x + offset['x'], label_y + offset['y']
+        data_w, data_h = offset['width'], offset['height']
+        
+        field_image = image[data_y : data_y + data_h, data_x : data_x + data_w]
+        processed_field = preprocess_field_for_ocr(field_image)
+        
+        safe_name = "".join(c for c in name if c.isalnum()).rstrip()
+        field_output_path = os.path.join(output_folder, f"{base_name}_{safe_name}.png")
+        cv2.imwrite(field_output_path, processed_field)
+        print(f"Successfully pre-screened field: {name}")
+        return field_output_path
+    else:
+        print(f"Warning: Could not find required field '{name}'. Skipping card.")
+        return None

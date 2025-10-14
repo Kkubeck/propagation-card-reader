@@ -42,12 +42,18 @@ This project is a Python tool to automate data extraction from digitized propaga
 
 - Pivot to "Power Path": After successful alignment, it was discovered that the internal layout of the cards themselves varied, making a single fixed-coordinate template for fields unreliable. The project is now pivoting to a more dynamic approach: finding each field label individually using template matching.
 
-- Dynamic Field Finding: Implemented the "Power Path" method, where each field's printed label is located individually using template matching before the data is extracted with a relative offset.
-
 - Iterative Tuning: Developed a workflow of testing, analyzing failures, and creating new, higher-quality templates (combining text and graphical features) to improve the success rate.
 
 - High Success Rate Achieved: Reached a high success rate (90-98%) for key fields like "Accession Number" and "Botanical Name" across multiple test batches, proving the dynamic method is robust.
 
-- System Expansion: Successfully expanded the system to extract additional, varied fields, including large text blocks like "Propagation."
+- System Expansion: Successfully expanded the system to extract additional, varied fields, including large text blocks like "Propagation.
+
+- OCR Integration: Integrated the Google Cloud Vision API to perform handwritten and typed text recognition on the extracted and preprocessed field images.
+
+- Post-Processing: Created a dedicated module for cleaning raw OCR text. Implemented a function using regular expressions (regex) to extract the structured 'Accession Number', achieving 100% accuracy on test data.
+
+- Assembly & Output: Integrated all modules into the main script to create a full end-to-end pipeline. The script now outputs a clean output.csv file for successful extractions.
+
+- Advanced Error Handling: Implemented "early exit" logic to skip processing cards where the key 'Accession Number' field cannot be found, saving API calls. Images of failed cards are compiled into a separate review_failures.pdf for manual review.
+
 ---
-_This README will be updated as new features are added._

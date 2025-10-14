@@ -2,11 +2,9 @@
 
 This project is a Python tool to automate data extraction from digitized propagation card files using OCR and export the results to a CSV.
 
+[![View Project Website](https://img.shields.io/badge/View%20Website-Live-blue)](https://kkubeck.github.io/propagation-card-reader/)
+
 ## Getting Started
-
-### Prerequisites
-
-- [Miniforge](https://github.com/conda-forge/miniforge) or another Conda distribution.
 
 ### Installation
 

@@ -1,0 +1,16 @@
+[
+  {
+    "objectID": "about.html",
+    "href": "about.html",
+    "title": "About",
+    "section": "",
+    "text": "About this site"
+  },
+  {
+    "objectID": "index.html",
+    "href": "index.html",
+    "title": "Propagation Card Reader Project",
+    "section": "",
+    "text": "This project uses computer vision and OCR to digitize handwritten propagation cards. Here is a sample of the final extracted data:\nimport pandas as pd\n\nLoad the CSV file from our reports folder\ndf = pd.read_csv(‘reports/output.csv’)\n\n\nDisplay the first 5 rows\nprint(df.head().to_markdown(index=False))"
+  }
+]

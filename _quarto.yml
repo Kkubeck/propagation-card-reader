@@ -1,0 +1,20 @@
+project:
+  type: website
+  output-dir: docs 
+
+website:
+  title: "Propagation Card Reader"
+  navbar:
+    left:
+      - href: index.qmd
+        text: Home
+      - href: about.qmd
+        text: About
+  page-footer:
+    right: "Built with [Quarto](https://quarto.org/)"
+    left: "&copy; Copyright 2025, Kevin Kubeck"
+
+format:
+  html:
+    theme: cosmo
+    css: styles.css

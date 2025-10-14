@@ -1,0 +1,14 @@
+---
+title: "Propagation Card Reader Project"
+---
+
+This project uses computer vision and OCR to digitize handwritten propagation cards. Here is a sample of the final extracted data:
+
+```{python}
+import pandas as pd
+
+# Load the CSV file from our reports folder
+df = pd.read_csv('reports/output.csv')
+
+# Display the first 5 rows
+print(df.head().to_markdown(index=False))

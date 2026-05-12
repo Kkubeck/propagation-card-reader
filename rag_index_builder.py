@@ -168,7 +168,7 @@ def extract_parent_and_suffix(item_accession_number: str | None, parent_hint: st
 
 
 def iter_csv_rows(path: str) -> Iterable[dict[str, str]]:
-    with open(path, "r", encoding="utf-8-sig", newline="") as handle:
+    with open(path, "r", encoding="latin-1", newline="") as handle:
         yield from csv.DictReader(handle)
 
 
@@ -185,8 +185,31 @@ def rebuild_database(db_path: str) -> None:
 
 
 def build_index(config_path: str | None = None) -> dict[str, int]:
+    def build_short_taxon_name(genus: str | None, species: str | None, infra_text: str | None, taxon_name_full: str | None) -> str | None:
+        parts = [part for part in (genus, species, infra_text) if part]
+        if parts:
+            return " ".join(parts)
+        full_name = clean_text(taxon_name_full)
+        if not full_name:
+            return None
+        tokens = full_name.split()
+        short_tokens: list[str] = []
+        for token in tokens:
+            short_tokens.append(token)
+            if len(short_tokens) >= 2 and token and token[0].isupper() and token.lower() not in AUTHORSHIP_TOKENS:
+                short_tokens.pop()
+                break
+        return " ".join(short_tokens) or full_name
+
+    def parse_genus_from_taxon_name(taxon_name: str | None) -> str | None:
+        taxon_name = clean_text(taxon_name)
+        if not taxon_name:
+            return None
+        match = re.match(r"([A-Za-z×x-]+)", taxon_name)
+        return match.group(1) if match else None
+
     config = load_config(config_path)
-    accession_csv = config["data_sources"]["accession_history"]
+    accession_csv = config["data_sources"]["accession_nomenclature"]
     item_csv = config["data_sources"]["accession_item_history"]
     db_path = config["rag_db_path"]
 
@@ -197,6 +220,7 @@ def build_index(config_path: str | None = None) -> dict[str, int]:
     accession_rows = []
     taxa_stats: dict[tuple[str, str, str, str], dict[str, int | str | None]] = {}
     genus_counts: defaultdict[str, int] = defaultdict(int)
+    accession_genus_lookup: dict[str, str] = {}
     accession_count = 0
 
     for accession_count, row in enumerate(iter_csv_rows(accession_csv), start=1):
@@ -206,10 +230,14 @@ def build_index(config_path: str | None = None) -> dict[str, int]:
 
         genus = clean_text(row.get("Genus"))
         species = clean_text(row.get("Species"))
-        taxon_name = clean_text(row.get("TaxonName"))
-        taxon_name_full = clean_text(row.get("TaxonNameFull")) or taxon_name
-        family = clean_text(row.get("Family") or row.get("FamilyEx"))
+        infra_text = build_infra_text(row.get("InfraType1"), row.get("InfraName1"))
+        taxon_name_full = clean_text(row.get("TaxonNameFull"))
+        taxon_name = build_short_taxon_name(genus, species, infra_text, taxon_name_full)
+        family = clean_text(row.get("Family"))
         accession_year = derive_accession_year(row, accession_number, fmt)
+        acc_no_full = normalize_accession(row.get("AccNoFull"))
+        if acc_no_full and genus:
+            accession_genus_lookup[acc_no_full] = genus
         accession_rows.append(
             (
                 accession_number,
@@ -217,15 +245,15 @@ def build_index(config_path: str | None = None) -> dict[str, int]:
                 accession_year,
                 genus,
                 species,
-                build_infra_text(row.get("InfraType1"), row.get("InfraName1")),
+                infra_text,
                 taxon_name,
                 taxon_name_full,
                 family,
-                clean_text(row.get("Collector")),
-                normalize_date(row.get("CollDate") or row.get("CollectionDate")),
-                clean_text(row.get("CountryCode") or row.get("Country")),
-                clean_text(row.get("ProvenanceCode")),
-                parse_boolish(row.get("Current")),
+                None,
+                None,
+                None,
+                None,
+                None,
                 row_hash(row),
             )
         )
@@ -278,17 +306,31 @@ def build_index(config_path: str | None = None) -> dict[str, int]:
         if not item_accession_number:
             continue
         parent_accession_number, item_suffix = extract_parent_and_suffix(item_accession_number, row.get("AccNoFull"))
+        taxon_name = clean_text(row.get("TaxonName"))
+        genus = accession_genus_lookup.get(normalize_accession(row.get("AccNoFull"))) or parse_genus_from_taxon_name(taxon_name)
         item_rows.append(
             (
                 item_accession_number,
                 parent_accession_number,
                 item_suffix,
-                clean_text(row.get("Genus")),
-                clean_text(row.get("TaxonName")),
+                genus,
+                taxon_name,
                 clean_text(row.get("ItemStatus")),
-                clean_text(row.get("ItemType")),
+                normalize_date(row.get("ItemStatusDate")),
+                clean_text(row.get("ItemLocationCode")),
+                clean_text(row.get("ItemLocationName")),
+                clean_text(row.get("MaterialType")),
                 clean_text(row.get("Propagule")),
+                clean_text(row.get("ProjectCode")),
                 clean_text(row.get("PropComment")),
+                clean_text(row.get("PropContainer")),
+                clean_text(row.get("PropDuration")),
+                clean_text(row.get("PropEnvironment")),
+                clean_text(row.get("PropMedium")),
+                clean_text(row.get("PropQuantity")),
+                clean_text(row.get("PropTreatment")),
+                clean_text(row.get("ProvenanceCode")),
+                normalize_date(row.get("RecDate")),
                 row_hash(row),
             )
         )
@@ -299,8 +341,11 @@ def build_index(config_path: str | None = None) -> dict[str, int]:
         """
         INSERT INTO rag_items (
             item_accession_number, parent_accession_number, item_suffix, genus, taxon_name,
-            item_status, item_type, propagule, prop_comment, source_row_hash
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            item_status, item_status_date, item_location_code, item_location_name, material_type,
+            propagule, project_code, prop_comment, prop_container, prop_duration,
+            prop_environment, prop_medium, prop_quantity, prop_treatment, provenance_code,
+            rec_date, source_row_hash
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         item_rows,
     )

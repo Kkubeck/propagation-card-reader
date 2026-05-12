@@ -1,0 +1,41 @@
+# OCR Corrections — Known misreads and their fixes
+# Format: wrong_text -> correct_text
+# Lines starting with # are comments. Blank lines are ignored.
+# Phrases (multi-word) are also supported.
+
+## Explicit Word Corrections
+cermination -> germination
+gernination -> germination
+germiation -> germination
+gerrn -> germ
+gern -> germ
+herm -> germ
+soon -> sown
+prickled -> pricked
+pickled -> pricked
+osmosote -> osmocote
+osmocotee -> osmocote
+nutricole -> nutricote
+coldfrarne -> coldframe
+coldfrarne. -> coldframe
+glasthouse -> glasshouse
+shadehause -> shadehouse
+seediing -> seedling
+seediings -> seedlings
+buibs -> bulbs
+offsefs -> offsets
+scionss -> scions
+periite -> perlite
+vermicuiite -> vermiculite
+gibberellic -> gibberellic
+G. -> germinated
+
+## Phrase Corrections
+prickled out -> pricked out
+picked out -> pricked out
+germs -> germ
+cold strat -> cold stratification
+warm strat -> warm stratification
+surfacesow -> surface sow
+tip cutts -> tip cuttings
+seediings -> seedlings

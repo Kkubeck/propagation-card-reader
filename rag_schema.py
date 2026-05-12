@@ -34,9 +34,21 @@ CREATE TABLE IF NOT EXISTS rag_items (
     genus TEXT,
     taxon_name TEXT,
     item_status TEXT,
-    item_type TEXT,
+    item_status_date TEXT,
+    item_location_code TEXT,
+    item_location_name TEXT,
+    material_type TEXT,
     propagule TEXT,
+    project_code TEXT,
     prop_comment TEXT,
+    prop_container TEXT,
+    prop_duration TEXT,
+    prop_environment TEXT,
+    prop_medium TEXT,
+    prop_quantity TEXT,
+    prop_treatment TEXT,
+    provenance_code TEXT,
+    rec_date TEXT,
     source_row_hash TEXT NOT NULL
 );
 

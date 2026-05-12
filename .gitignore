@@ -208,7 +208,9 @@ __marimo__/
 
 # Project specific
 propagation-card-reader-5c629497fc77.json
+.crd/
 
 # Quarto Cache and Metadata
 *_cache/
 .quarto/
+images/

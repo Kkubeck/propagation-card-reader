@@ -158,13 +158,58 @@ class RAGWorker:
             notes = data.get("notes", "")
             notes = self._normalize_propagation_text(notes).strip()
 
+            # Card field extractions — all nullable text
+            def _txt(key: str) -> str | None:
+                v = data.get(key)
+                if v is None:
+                    return None
+                s = str(v).strip()
+                return s or None
+
+            def _bool(key: str) -> int | None:
+                v = data.get(key)
+                if v is None:
+                    return None
+                if isinstance(v, bool):
+                    return 1 if v else 0
+                s = str(v).strip().lower()
+                if s in ('true', 'yes', '1'):
+                    return 1
+                if s in ('false', 'no', '0'):
+                    return 0
+                return None
+
+            family = _txt("family")
+            received_as = _txt("received_as")
+            date_received = _txt("date_received")
+            geocode = _txt("geocode")
+            quantity = _txt("quantity")
+            present_location = _txt("present_location")
+            wanted_for_area = _txt("wanted_for_area")
+            source = _txt("source")
+            source_info = _txt("source_info")
+            collector_number = _txt("collector_number")
+            other_number = _txt("other_number")
+            labels_requested = _txt("labels_requested")
+            max_quantity = _txt("max_quantity")
+            parent_accession = _txt("parent_accession")
+            collection_info = _txt("collection_info")
+            distribution = _txt("distribution")
+            curators_info = _txt("curators_info")
+            iris_data_entered = _bool("iris_data_entered")
+
             cur = conn.execute(
                 """
                 INSERT INTO extractions
                     (card_id, botanical_name, propagation_text, raw_json, model, dpi,
                      processing_time_s, created_at, normalized_botanical_name,
-                     prompt_text, prompt_context, notes)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                     prompt_text, prompt_context, notes,
+                     family, received_as, date_received, geocode, quantity,
+                     present_location, wanted_for_area, source, source_info,
+                     collector_number, other_number, labels_requested, max_quantity,
+                     parent_accession, collection_info, distribution,
+                     curators_info, iris_data_entered)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     card_id,
@@ -179,6 +224,11 @@ class RAGWorker:
                     prompt_text,
                     context_payload["context_text"] if prompt_mode != "ocr_only" else None,
                     notes or None,
+                    family, received_as, date_received, geocode, quantity,
+                    present_location, wanted_for_area, source, source_info,
+                    collector_number, other_number, labels_requested, max_quantity,
+                    parent_accession, collection_info, distribution,
+                    curators_info, iris_data_entered,
                 ),
             )
             extraction_id = cur.lastrowid

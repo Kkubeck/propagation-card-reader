@@ -1,0 +1,44 @@
+garden:
+  name: "UBC Botanical Garden"
+
+accession_formats:
+  legacy:
+    pattern: '^\d{5}-\d{3}-\d{2}$'
+    description: "Pre-~2012: NNNNN-NNN-NN (conserved)"
+    year_extraction: "final_two_digits"
+  modern:
+    pattern: '^\d{4}-\d{4,5}$'
+    description: "Post-~2012: YYYY-NNNNN"
+    year_extraction: "leading_four_digits"
+  item_suffix:
+    pattern: '\.\d{1,2}$'
+    description: "Item suffix .NN (e.g. .99, .80-.89)"
+
+data_sources:
+  accession_nomenclature: "data/accession_card_taxonomy.csv"
+  accession_item_history: "data/item_history_nursery.csv"
+  # Legacy (kept for reference, no longer used by builder):
+  # accession_history: "/home/hevek/.openclaw/workspace/data/accession_history.csv"
+  # accession_item_history_old: "/home/hevek/.openclaw/workspace/data/accession_item_history.csv"
+
+rag_db_path: "rag.db"
+
+default_dpi: 150
+
+filename_parsing:
+  duplex_markers: ["duplex", "double"]
+  exclude_duplex: true
+
+rag:
+  context_budget:
+    max_taxa: 15
+    max_accession_examples: 10
+    max_genera_in_range: 20
+    max_context_chars: 2000
+
+  caching:
+    genus_cache_size: 128
+
+  prompt:
+    version: "v2.0-rag"
+    baseline_version: "v1.0-baseline"

@@ -232,6 +232,14 @@ def build_index(config_path: str | None = None) -> dict[str, int]:
         species = clean_text(row.get("Species"))
         infra_text = build_infra_text(row.get("InfraType1"), row.get("InfraName1"))
         taxon_name_full = clean_text(row.get("TaxonNameFull"))
+        # Construct TaxonNameFull from TaxonName + SpeciesAuthor if not present
+        if not taxon_name_full:
+            taxon_name_raw = clean_text(row.get("TaxonName"))
+            species_author = clean_text(row.get("SpeciesAuthor"))
+            if taxon_name_raw and species_author:
+                taxon_name_full = f"{taxon_name_raw} {species_author}"
+            elif taxon_name_raw:
+                taxon_name_full = taxon_name_raw
         taxon_name = build_short_taxon_name(genus, species, infra_text, taxon_name_full)
         family = clean_text(row.get("Family"))
         accession_year = derive_accession_year(row, accession_number, fmt)
@@ -305,9 +313,13 @@ def build_index(config_path: str | None = None) -> dict[str, int]:
         item_accession_number = normalize_accession(row.get("ItemAccNoFull"))
         if not item_accession_number:
             continue
-        parent_accession_number, item_suffix = extract_parent_and_suffix(item_accession_number, row.get("AccNoFull"))
+        # Derive parent from AccNoFull if present, else from ItemAccNoFull prefix
+        acc_no_full_hint = row.get("AccNoFull")
+        if not acc_no_full_hint and "." in (item_accession_number or ""):
+            acc_no_full_hint = item_accession_number.rsplit(".", 1)[0]
+        parent_accession_number, item_suffix = extract_parent_and_suffix(item_accession_number, acc_no_full_hint)
         taxon_name = clean_text(row.get("TaxonName"))
-        genus = accession_genus_lookup.get(normalize_accession(row.get("AccNoFull"))) or parse_genus_from_taxon_name(taxon_name)
+        genus = accession_genus_lookup.get(normalize_accession(acc_no_full_hint)) or parse_genus_from_taxon_name(taxon_name)
         item_rows.append(
             (
                 item_accession_number,

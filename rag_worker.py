@@ -23,21 +23,29 @@ MODERN_RE = re.compile(r"^\d{4}-\d{4,5}(?:\.\d{1,2})?$")
 
 
 def call_ollama_with_prompt(ollama_url: str, model: str, image_b64: str, prompt_text: str) -> str:
-    """Send image + prompt to Ollama vision API and return the response text."""
-    url = f"{ollama_url}/api/generate"
+    """Send image + prompt to Ollama vision API and return the response text.
+    
+    Uses /api/chat (required for vision models in Ollama >=0.23.4).
+    """
+    url = f"{ollama_url}/api/chat"
     payload = {
         "model": model,
-        "prompt": prompt_text,
-        "images": [image_b64],
+        "messages": [
+            {
+                "role": "user",
+                "content": prompt_text,
+                "images": [image_b64],
+            }
+        ],
         "stream": False,
         "options": {
             "temperature": 0.1,
             "num_predict": 512,
         },
     }
-    response = requests.post(url, json=payload, timeout=600)
+    response = requests.post(url, json=payload, timeout=300)
     response.raise_for_status()
-    return response.json().get("response", "")
+    return response.json().get("message", {}).get("content", "")
 
 
 class RAGWorker:
@@ -282,6 +290,15 @@ class RAGWorker:
             )
             conn.commit()
             return "failed", elapsed
+
+        except requests.exceptions.Timeout:
+            elapsed = time.time() - start
+            conn.execute(
+                "UPDATE cards SET status = 'error', error_message = ?, processed_at = ? WHERE id = ?",
+                (f"Ollama timeout after {elapsed:.0f}s", now_iso(), card_id),
+            )
+            conn.commit()
+            return "error", elapsed
 
         except requests.exceptions.RequestException as exc:
             elapsed = time.time() - start

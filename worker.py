@@ -102,12 +102,20 @@ def parse_json_response(text):
 
 
 def call_ollama(ollama_url, model, image_b64):
-    """Send image to Ollama vision API and return parsed response."""
-    url = f"{ollama_url}/api/generate"
+    """Send image to Ollama vision API and return parsed response.
+    
+    Uses /api/chat (required for vision models in Ollama >=0.23.4).
+    """
+    url = f"{ollama_url}/api/chat"
     payload = {
         "model": model,
-        "prompt": PROMPT,
-        "images": [image_b64],
+        "messages": [
+            {
+                "role": "user",
+                "content": PROMPT,
+                "images": [image_b64],
+            }
+        ],
         "stream": False,
         "options": {
             "temperature": 0.1,
@@ -115,11 +123,11 @@ def call_ollama(ollama_url, model, image_b64):
         }
     }
     
-    resp = requests.post(url, json=payload, timeout=600)
+    resp = requests.post(url, json=payload, timeout=300)
     resp.raise_for_status()
     
     result = resp.json()
-    return result.get("response", "")
+    return result.get("message", {}).get("content", "")
 
 
 def process_card(conn, card, ollama_url, model, dpi, db_path='cards.db'):

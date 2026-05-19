@@ -41,6 +41,7 @@ EXTRACTIONS_COLUMNS = {
     "parent_accession": "TEXT",
     "collection_info": "TEXT",
     "distribution": "TEXT",
+    "accession_number": "TEXT",
     "curators_info": "TEXT",
     "iris_data_entered": "INTEGER",
 }

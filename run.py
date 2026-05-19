@@ -205,40 +205,49 @@ def cmd_export(args):
 
     conn = get_db(db_path)
 
+    # All extraction field columns (matches schema.py EXTRACTION_FIELDS order)
+    ext_fields = [
+        "botanical_name", "family", "geocode", "received_as", "quantity",
+        "date_received", "present_location", "wanted_for_area", "source",
+        "source_info", "collector_number", "other_number", "labels_requested",
+        "max_quantity", "parent_accession", "collection_info", "distribution",
+        "accession_number", "propagation_text", "curators_info", "iris_data_entered",
+    ]
+    ext_select = ", ".join(f"e.{f}" for f in ext_fields)
+
     rows = conn.execute(
-        """
+        f"""
         SELECT
             c.pdf_path,
             c.page_num,
-            a.accession_number,
-            e.botanical_name,
-            e.propagation_text,
+            c.status,
             e.processing_time_s,
-            c.status
+            {ext_select},
+            GROUP_CONCAT(a.accession_number, ' | ') AS all_accession_numbers
         FROM cards c
         LEFT JOIN extractions e ON e.card_id = c.id
         LEFT JOIN accession_numbers a ON a.extraction_id = e.id
-        ORDER BY c.pdf_path, c.page_num, a.position
+        GROUP BY c.id
+        ORDER BY c.pdf_path, c.page_num
         """
     ).fetchall()
 
+    csv_headers = [
+        "pdf_file", "page_num", "status", "processing_time_s",
+    ] + ext_fields + ["all_accession_numbers"]
+
     with open(output, "w", newline="", encoding="utf-8") as f:
         writer = csv.writer(f)
-        writer.writerow([
-            "pdf_file", "page_num", "accession_number",
-            "botanical_name", "propagation_text", "processing_time_s", "status"
-        ])
+        writer.writerow(csv_headers)
         for row in rows:
             pdf_file = os.path.basename(row["pdf_path"]) if row["pdf_path"] else ""
-            writer.writerow([
-                pdf_file,
-                row["page_num"],
-                row["accession_number"] or "",
-                row["botanical_name"] or "",
-                row["propagation_text"] or "",
-                f"{row['processing_time_s']:.1f}" if row["processing_time_s"] else "",
-                row["status"],
-            ])
+            time_s = f"{row['processing_time_s']:.1f}" if row["processing_time_s"] else ""
+            field_values = [row[f] if row[f] is not None else "" for f in ext_fields]
+            writer.writerow(
+                [pdf_file, row["page_num"], row["status"], time_s]
+                + field_values
+                + [row["all_accession_numbers"] or ""]
+            )
 
     print(f"Exported {len(rows)} rows to {output}")
     conn.close()

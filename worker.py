@@ -9,11 +9,20 @@ import fitz  # PyMuPDF
 import requests
 
 from schema import get_db, now_iso
+from rag_prompt import BASELINE_PROMPT
 
 
-PROMPT = """Read this scanned botanical garden propagation card. Extract as JSON:
-{"accession_number": ["..."], "botanical_name": "...", "propagation_text": "full text as written"}
-If multiple accession numbers exist, list all. Read numbers precisely."""
+# Default prompt for ocr_only mode (RAG mode uses rag_prompt.build_prompt)
+PROMPT = BASELINE_PROMPT
+
+# All extraction fields in DB column order (excluding raw_json, model, dpi, processing_time_s, created_at)
+EXTRACTION_FIELDS = [
+    "botanical_name", "family", "geocode", "received_as", "quantity",
+    "date_received", "present_location", "wanted_for_area", "source",
+    "source_info", "collector_number", "other_number", "labels_requested",
+    "max_quantity", "parent_accession", "collection_info", "distribution",
+    "accession_number", "propagation_text", "curators_info", "iris_data_entered",
+]
 
 
 def extract_page_image(pdf_path, page_num, dpi, images_dir=None):
@@ -119,7 +128,7 @@ def call_ollama(ollama_url, model, image_b64):
         "stream": False,
         "options": {
             "temperature": 0.1,
-            "num_predict": 512,
+            "num_predict": 2048,  # Expanded for 22-field schema
         }
     }
     
@@ -162,35 +171,77 @@ def process_card(conn, card, ollama_url, model, dpi, db_path='cards.db'):
         
         elapsed = time.time() - start
         
-        botanical_name = data.get("botanical_name", "")
-        propagation_text = data.get("propagation_text", "")
-        accessions = data.get("accession_number", [])
-        
-        # Normalize types — model sometimes returns lists instead of strings
-        if isinstance(botanical_name, list):
-            botanical_name = " / ".join(str(x) for x in botanical_name)
-        if isinstance(propagation_text, list):
-            propagation_text = "\n".join(str(x) for x in propagation_text)
-        botanical_name = str(botanical_name) if botanical_name else ""
-        propagation_text = str(propagation_text) if propagation_text else ""
-        
-        # Normalize accessions to list
-        if isinstance(accessions, str):
-            accessions = [accessions]
-        if not isinstance(accessions, list):
-            accessions = []
-        
-        # Insert extraction
+        # --- Extract all fields ---
+        def _str_field(val):
+            """Normalize a field value to string or None."""
+            if val is None:
+                return None
+            if isinstance(val, list):
+                return " / ".join(str(x) for x in val)
+            s = str(val).strip()
+            return s if s else None
+
+        def _text_field(val):
+            """Normalize a text field (may be list of lines) to string or None."""
+            if val is None:
+                return None
+            if isinstance(val, list):
+                return "\n".join(str(x) for x in val)
+            s = str(val).strip()
+            return s if s else None
+
+        field_vals = {}
+        for fname in EXTRACTION_FIELDS:
+            raw_val = data.get(fname)
+            if fname == "propagation_text":
+                field_vals[fname] = _text_field(raw_val)
+            elif fname == "iris_data_entered":
+                # Store as integer: 1/0/None
+                if raw_val is True:
+                    field_vals[fname] = 1
+                elif raw_val is False:
+                    field_vals[fname] = 0
+                else:
+                    field_vals[fname] = None
+            elif fname == "accession_number":
+                # Primary accession — string (model may return list, take first)
+                if isinstance(raw_val, list):
+                    field_vals[fname] = str(raw_val[0]).strip() if raw_val else None
+                else:
+                    field_vals[fname] = _str_field(raw_val)
+            else:
+                field_vals[fname] = _str_field(raw_val)
+
+        # All accession numbers (array) — from all_accession_numbers or fallback to accession_number array
+        all_acc = data.get("all_accession_numbers", [])
+        if not all_acc:
+            # Fallback: if model didn't produce all_accession_numbers, use accession_number
+            fallback = data.get("accession_number", [])
+            if isinstance(fallback, list):
+                all_acc = fallback
+            elif fallback:
+                all_acc = [fallback]
+        if isinstance(all_acc, str):
+            all_acc = [all_acc]
+        if not isinstance(all_acc, list):
+            all_acc = []
+
+        # Build INSERT for extractions with all fields
+        col_names = ["card_id"] + EXTRACTION_FIELDS + ["raw_json", "model", "dpi", "processing_time_s", "created_at"]
+        col_placeholders = ", ".join(["?"] * len(col_names))
+        col_values = (
+            [card_id]
+            + [field_vals[f] for f in EXTRACTION_FIELDS]
+            + [raw_response, model, dpi, elapsed, now_iso()]
+        )
         cur = conn.execute(
-            """INSERT INTO extractions 
-               (card_id, botanical_name, propagation_text, raw_json, model, dpi, processing_time_s, created_at)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
-            (card_id, botanical_name, propagation_text, raw_response, model, dpi, elapsed, now_iso())
+            f"INSERT INTO extractions ({', '.join(col_names)}) VALUES ({col_placeholders})",
+            col_values,
         )
         extraction_id = cur.lastrowid
-        
-        # Insert accession numbers
-        for pos, acc in enumerate(accessions):
+
+        # Insert all accession numbers into junction table
+        for pos, acc in enumerate(all_acc):
             conn.execute(
                 """INSERT INTO accession_numbers (extraction_id, accession_number, position)
                    VALUES (?, ?, ?)""",

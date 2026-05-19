@@ -40,7 +40,7 @@ def call_ollama_with_prompt(ollama_url: str, model: str, image_b64: str, prompt_
         "stream": False,
         "options": {
             "temperature": 0.1,
-            "num_predict": 512,
+            "num_predict": 2048,  # Expanded for 22-field schema
         },
     }
     response = requests.post(url, json=payload, timeout=300)
@@ -162,7 +162,21 @@ class RAGWorker:
 
             botanical_name = self._normalize_botanical_name(data.get("botanical_name", ""))
             propagation_text = self._normalize_propagation_text(data.get("propagation_text", ""))
-            accessions = self._normalize_accessions(data.get("accession_number", []))
+
+            # Primary accession number (string from the bordered field)
+            primary_acc_raw = data.get("accession_number")
+            if isinstance(primary_acc_raw, list):
+                primary_accession_number = str(primary_acc_raw[0]).strip() if primary_acc_raw else None
+            elif primary_acc_raw:
+                primary_accession_number = str(primary_acc_raw).strip() or None
+            else:
+                primary_accession_number = None
+
+            # All accession numbers (array from all_accession_numbers, fallback to accession_number)
+            all_acc = data.get("all_accession_numbers", [])
+            if not all_acc:
+                all_acc = data.get("accession_number", [])
+            accessions = self._normalize_accessions(all_acc)
             notes = data.get("notes", "")
             notes = self._normalize_propagation_text(notes).strip()
 
@@ -216,8 +230,8 @@ class RAGWorker:
                      present_location, wanted_for_area, source, source_info,
                      collector_number, other_number, labels_requested, max_quantity,
                      parent_accession, collection_info, distribution,
-                     curators_info, iris_data_entered)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                     accession_number, curators_info, iris_data_entered)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     card_id,
@@ -236,7 +250,7 @@ class RAGWorker:
                     present_location, wanted_for_area, source, source_info,
                     collector_number, other_number, labels_requested, max_quantity,
                     parent_accession, collection_info, distribution,
-                    curators_info, iris_data_entered,
+                    primary_accession_number, curators_info, iris_data_entered,
                 ),
             )
             extraction_id = cur.lastrowid

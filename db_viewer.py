@@ -134,6 +134,7 @@ def get_extractions_df(conn: sqlite3.Connection, limit: int = 500, offset: int =
             c.pdf_path,
             c.page_num,
             c.status,
+            c.error_message,
             c.image_path,
             e.processing_time_s,
             e.model,
@@ -277,7 +278,7 @@ with tab_cards:
 
         if view_mode == "📋 Table":
             # Show compact table
-            display_cols = ["card_id", "status", "accession_number", "botanical_name",
+            display_cols = ["card_id", "status", "error_message", "accession_number", "botanical_name",
                           "family", "received_as", "date_received", "all_accession_numbers",
                           "processing_time_s"]
             available_cols = [c for c in display_cols if c in df.columns]

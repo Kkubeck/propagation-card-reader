@@ -57,6 +57,59 @@ class RAGContextBuilder:
             "item": item[0]["item_accession_number"] if item else "2019-0082.99",
         }
 
+    def _query_synonyms(self, genus: str) -> list[sqlite3.Row]:
+        """Fetch synonym mappings for a genus, gracefully handling missing table."""
+        try:
+            return self._query(
+                """
+                SELECT synonym_name, accepted_name
+                FROM rag_synonyms
+                WHERE synonym_genus = ? OR accepted_genus = ?
+                ORDER BY synonym_name
+                """,
+                (genus, genus),
+            )
+        except Exception:
+            return []
+
+    def _build_taxonomy_checklist(
+        self, taxa_lines: list[str], synonym_rows: list[sqlite3.Row], max_lines: int = 40
+    ) -> list[str]:
+        """Build a compact taxonomy checklist from accepted names + synonyms."""
+        if not taxa_lines and not synonym_rows:
+            return []
+
+        # Build synonym lookup: accepted_name -> list of synonym_names
+        syn_map: dict[str, list[str]] = {}
+        extra_synonyms: list[tuple[str, str]] = []  # synonyms whose accepted name isn't in taxa_lines
+        taxa_set = {t.lower() for t in taxa_lines}
+        for row in synonym_rows:
+            accepted = row["accepted_name"]
+            synonym = row["synonym_name"]
+            if accepted.lower() in taxa_set:
+                syn_map.setdefault(accepted, []).append(synonym)
+            else:
+                extra_synonyms.append((synonym, accepted))
+
+        lines: list[str] = []
+        for taxon in taxa_lines:
+            syns = syn_map.get(taxon)
+            if syns:
+                syn_text = ", ".join(sorted(syns)[:3])  # Limit synonyms per name
+                lines.append(f"- {taxon} (syn: {syn_text})")
+            else:
+                lines.append(f"- {taxon}")
+            if len(lines) >= max_lines:
+                break
+
+        # Add synonyms that map to names outside the current taxa list
+        for synonym, accepted in extra_synonyms:
+            if len(lines) >= max_lines:
+                break
+            lines.append(f"- {synonym} -> accepted: {accepted}")
+
+        return lines
+
     def _get_genus_context_uncached(self, genus: str) -> dict[str, Any]:
         taxa_rows = self._query(
             """
@@ -68,6 +121,7 @@ class RAGContextBuilder:
             """,
             (genus, self.max_taxa),
         )
+        synonym_rows = self._query_synonyms(genus)
         legacy_rows = self._query(
             """
             SELECT accession_number, taxon_name_full, accession_format_type, accession_year
@@ -112,6 +166,7 @@ class RAGContextBuilder:
             "accession_rows": accession_rows,
             "suffix_rows": suffix_rows,
             "year_span": year_row[0] if year_row else None,
+            "synonym_rows": synonym_rows,
         }
 
     def _pick_accession_examples(self, accession_rows: list[sqlite3.Row], limit: int) -> list[str]:
@@ -200,6 +255,7 @@ class RAGContextBuilder:
         accession_examples: list[str],
         suffixes: list[str],
         examples: dict[str, str],
+        taxonomy_checklist: list[str] | None = None,
     ) -> str:
         taxa_block = "\n".join(f"- {line}" for line in taxa_lines) if taxa_lines else "- No genus-specific taxa retrieved"
         accession_block = (
@@ -208,6 +264,13 @@ class RAGContextBuilder:
             else "- No scoped accession examples retrieved"
         )
         suffix_block = " ".join(f".{suffix}" for suffix in suffixes) if suffixes else "(none observed)"
+        taxonomy_block = ""
+        if taxonomy_checklist:
+            taxonomy_block = (
+                "\n\nValid botanical names for this scope:\n"
+                + "\n".join(taxonomy_checklist)
+                + "\nIf the card name closely matches one of these, prefer the listed spelling."
+            )
         return (
             "Garden accession rules:\n"
             f"- Legacy format: NNNNN-NNN-NN (example: {examples['legacy']})\n"
@@ -223,6 +286,7 @@ class RAGContextBuilder:
             f"{accession_block}\n\n"
             "Observed item suffixes:\n"
             f"- {suffix_block}"
+            f"{taxonomy_block}"
         )
 
     def _shrink_text(
@@ -233,18 +297,26 @@ class RAGContextBuilder:
         accession_examples: list[str],
         suffixes: list[str],
         examples: dict[str, str],
+        taxonomy_checklist: list[str] | None = None,
     ) -> tuple[str, list[str], list[str]]:
         current_taxa = list(taxa_lines)
         current_examples = list(accession_examples)
+        current_checklist = list(taxonomy_checklist) if taxonomy_checklist else []
         text = context_text
-        while len(text) > self.max_context_chars and (current_taxa or current_examples):
-            if len(current_examples) > max(1, min(3, self.max_accession_examples // 2)):
+        while len(text) > self.max_context_chars and (current_checklist or current_taxa or current_examples):
+            # Trim taxonomy checklist first, then accession examples, then taxa
+            if current_checklist:
+                current_checklist.pop()
+            elif len(current_examples) > max(1, min(3, self.max_accession_examples // 2)):
                 current_examples.pop()
             elif current_taxa:
                 current_taxa.pop()
             else:
                 break
-            text = self._compose_context(hint_description, current_taxa, current_examples, suffixes, examples)
+            text = self._compose_context(
+                hint_description, current_taxa, current_examples, suffixes, examples,
+                taxonomy_checklist=current_checklist or None,
+            )
         if len(text) > self.max_context_chars:
             text = text[: self.max_context_chars - 3].rstrip() + "..."
         return text, current_taxa, current_examples
@@ -285,6 +357,7 @@ class RAGContextBuilder:
         accession_examples: list[str] = []
         suffixes: list[str] = []
         year_span_text: str | None = None
+        all_synonym_rows: list[sqlite3.Row] = []
 
         if hint_mode == "exact_genus" and confidence >= 0.8 and genera:
             genus = genera[0]
@@ -293,6 +366,7 @@ class RAGContextBuilder:
             taxa_lines = [row["taxon_name_full"] for row in ctx["taxa_rows"][: self.max_taxa]]
             accession_examples = self._pick_accession_examples(ctx["accession_rows"], self.max_accession_examples)
             suffixes = [row["item_suffix"] for row in ctx["suffix_rows"]]
+            all_synonym_rows = ctx.get("synonym_rows", [])
             span = ctx.get("year_span")
             if span and span["min_year"] and span["max_year"]:
                 year_span_text = f"{span['min_year']}-{span['max_year']}"
@@ -307,6 +381,7 @@ class RAGContextBuilder:
                 ctx = self._get_genus_context(genus)
                 for row in ctx["suffix_rows"]:
                     suffix_counts[row["item_suffix"]] = suffix_counts.get(row["item_suffix"], 0) + int(row["cnt"])
+                all_synonym_rows.extend(ctx.get("synonym_rows", []))
                 span = ctx.get("year_span")
                 if span:
                     if span["min_year"] is not None:
@@ -331,7 +406,11 @@ class RAGContextBuilder:
             }
 
         hint_description = self._describe_hint(filename_hints, genera_in_scope, year_span_text)
-        context_text = self._compose_context(hint_description, taxa_lines, accession_examples, suffixes, examples)
+        taxonomy_checklist = self._build_taxonomy_checklist(taxa_lines, all_synonym_rows)
+        context_text = self._compose_context(
+            hint_description, taxa_lines, accession_examples, suffixes, examples,
+            taxonomy_checklist=taxonomy_checklist or None,
+        )
         context_text, kept_taxa, kept_examples = self._shrink_text(
             context_text,
             hint_description,
@@ -339,6 +418,7 @@ class RAGContextBuilder:
             accession_examples,
             suffixes,
             examples,
+            taxonomy_checklist=taxonomy_checklist,
         )
         latency_ms = (time.perf_counter() - start) * 1000
         retrieval_query["retrieved_genera"] = genera_in_scope

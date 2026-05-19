@@ -18,7 +18,7 @@ from schema import get_db, now_iso
 from worker import extract_page_image, parse_json_response
 
 
-LEGACY_RE = re.compile(r"^\d{5}-\d{3}-\d{2}(?:\.\d{1,2})?$")
+LEGACY_RE = re.compile(r"^(?:0\d{5}-\d{4}-\d{4}|\d{5}-\d{3}-\d{2})(?:\.\d{1,2})?$")
 MODERN_RE = re.compile(r"^\d{4}-\d{4,5}(?:\.\d{1,2})?$")
 
 

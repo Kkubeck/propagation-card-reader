@@ -227,3 +227,7 @@ data/*.csv
 data/*.md
 data/samples/
 data/failed-card-samples/
+*.db-shm
+*.db-wal
+2026-*.csv
+auto_batch.sh

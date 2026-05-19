@@ -84,10 +84,23 @@ CREATE INDEX IF NOT EXISTS idx_rag_items_genus ON rag_items(genus);
 CREATE INDEX IF NOT EXISTS idx_rag_taxa_genus ON rag_taxa(genus);
 CREATE INDEX IF NOT EXISTS idx_rag_taxa_genus_normalized ON rag_taxa(genus_normalized);
 CREATE INDEX IF NOT EXISTS idx_rag_taxa_taxon_name_normalized ON rag_taxa(taxon_name_normalized);
+CREATE TABLE IF NOT EXISTS rag_synonyms (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    synonym_name TEXT NOT NULL,
+    synonym_genus TEXT,
+    accepted_name TEXT NOT NULL,
+    accepted_genus TEXT,
+    family TEXT,
+    source TEXT DEFAULT 'accession_csv'
+);
+
 CREATE INDEX IF NOT EXISTS idx_rag_filename_prefix3 ON rag_filename_genus_index(prefix_3);
 CREATE INDEX IF NOT EXISTS idx_rag_filename_prefix4 ON rag_filename_genus_index(prefix_4);
 CREATE INDEX IF NOT EXISTS idx_rag_filename_prefix5 ON rag_filename_genus_index(prefix_5);
 CREATE INDEX IF NOT EXISTS idx_rag_filename_sort_key ON rag_filename_genus_index(sort_key);
+CREATE INDEX IF NOT EXISTS idx_rag_synonyms_genus ON rag_synonyms(synonym_genus);
+CREATE INDEX IF NOT EXISTS idx_rag_synonyms_accepted_genus ON rag_synonyms(accepted_genus);
+CREATE INDEX IF NOT EXISTS idx_rag_synonyms_synonym_name ON rag_synonyms(synonym_name);
 """
 
 

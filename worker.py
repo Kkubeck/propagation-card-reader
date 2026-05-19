@@ -105,7 +105,110 @@ def parse_json_response(text):
     # Last resort: try to find any JSON object in the text
     match = re.search(r'\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}', text)
     if match:
-        return json.loads(match.group(0))
+        try:
+            return json.loads(match.group(0))
+        except json.JSONDecodeError:
+            pass
+    
+    # --- JSON repair pass ---
+    # LLMs (especially smaller vision models) often produce broken JSON:
+    # missing commas, trailing commas, truncated output, unescaped control chars.
+    # Try to fix common issues before giving up.
+    
+    def _repair_json(raw):
+        """Attempt to repair common JSON syntax errors from LLM output."""
+        s = raw
+        
+        # 1. Fix unescaped control characters inside string values
+        # Replace literal tabs and other control chars (except already-escaped ones)
+        # We process char-by-char to only fix chars inside strings
+        repaired_chars = []
+        in_str = False
+        esc = False
+        for c in s:
+            if esc:
+                repaired_chars.append(c)
+                esc = False
+                continue
+            if c == '\\' and in_str:
+                repaired_chars.append(c)
+                esc = True
+                continue
+            if c == '"':
+                in_str = not in_str
+                repaired_chars.append(c)
+                continue
+            if in_str and c == '\n':
+                repaired_chars.append('\\n')
+                continue
+            if in_str and c == '\r':
+                repaired_chars.append('\\r')
+                continue
+            if in_str and c == '\t':
+                repaired_chars.append('\\t')
+                continue
+            repaired_chars.append(c)
+        s = ''.join(repaired_chars)
+        
+        # 2. Fix missing commas between key-value pairs
+        # Pattern: value followed by whitespace then a new key (quoted string + colon)
+        # e.g. '"value"\n  "next_key":' or 'null\n  "next_key":'
+        # Handles: string values, null, true, false, numbers before a missing comma
+        s = re.sub(
+            r'("[^"]*"|null|true|false|\d+(?:\.\d+)?)\s*\n(\s*")',
+            r'\1,\n\2',
+            s
+        )
+        
+        # 3. Fix trailing commas before closing braces/brackets
+        s = re.sub(r',\s*([}\]])', r'\1', s)
+        
+        # 4. Fix truncated JSON — try to close open structures
+        # Count unbalanced braces/brackets (outside strings)
+        open_braces = 0
+        open_brackets = 0
+        in_str2 = False
+        esc2 = False
+        for c in s:
+            if esc2:
+                esc2 = False
+                continue
+            if c == '\\' and in_str2:
+                esc2 = True
+                continue
+            if c == '"':
+                in_str2 = not in_str2
+                continue
+            if in_str2:
+                continue
+            if c == '{':
+                open_braces += 1
+            elif c == '}':
+                open_braces -= 1
+            elif c == '[':
+                open_brackets += 1
+            elif c == ']':
+                open_brackets -= 1
+        
+        # If we ended inside a string, close it
+        if in_str2:
+            s += '"'
+        
+        # Remove any trailing comma before we close structures
+        s = s.rstrip()
+        s = re.sub(r',\s*$', '', s)
+        
+        # Close any open brackets then braces
+        s += ']' * max(0, open_brackets)
+        s += '}' * max(0, open_braces)
+        
+        return s
+    
+    try:
+        repaired = _repair_json(text)
+        return json.loads(repaired)
+    except json.JSONDecodeError:
+        pass
     
     raise json.JSONDecodeError("No valid JSON found in response", text, 0)
 

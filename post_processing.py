@@ -17,7 +17,7 @@ from pathlib import Path
 # Legacy format as written on cards: NNNNN-NNN-NN or NNNNN-NNNN-NNNN
 # The DB normalizes to NNNNN-NNN-NN but cards may use longer forms
 LEGACY_CARD_RE = re.compile(
-    r"\b(\d{4,5}[-/]\d{2,4}[-/]\d{2,4})\b"
+    r"\b(\d{4,6}[-/]\d{2,4}[-/]\d{2,4})\b"
 )
 
 # Modern format: YYYY-NNNNN or YYYY-NNNN (4-digit year, 4-5 digit sequence)
@@ -29,7 +29,7 @@ MODERN_RE = re.compile(
 ITEM_SUFFIX_RE = re.compile(r"^(.+?)\.(\d{1,2})$")
 
 # Strict classification patterns (after normalization)
-LEGACY_STRICT = re.compile(r"^\d{4,5}-\d{2,4}-\d{2,4}$")
+LEGACY_STRICT = re.compile(r"^\d{4,6}-\d{2,4}-\d{2,4}$")
 MODERN_STRICT = re.compile(r"^(?:19|20)\d{2}-\d{4,5}$")
 
 # --- False positive patterns ---

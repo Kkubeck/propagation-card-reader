@@ -40,6 +40,8 @@ FIELD GUIDE:
 Accession number formats: NNNNN-NNN-NN (legacy) or YYYY-NNNNN (modern).
 Some cards have hand-drawn tables with multiple accession numbers — capture ALL of them in all_accession_numbers.
 
+If a "Valid botanical names" list is provided in the context below, prefer matching names from that list over your own OCR interpretation. Many cards contain handwritten names that may be misspelled — use the closest match from the list.
+
 Return ONLY valid JSON:
 {{
   "botanical_name": "string or null",

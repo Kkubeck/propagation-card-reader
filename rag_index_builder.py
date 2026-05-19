@@ -408,6 +408,46 @@ def build_index(config_path: str | None = None) -> dict[str, int]:
         genus_rows,
     )
 
+    # --- Synonym extraction ---
+    synonym_rows = []
+    seen_synonyms: set[tuple[str, str]] = set()
+    for row in iter_csv_rows(accession_csv):
+        taxon_name = clean_text(row.get("TaxonName"))
+        synonym_name = clean_text(row.get("SynonymName"))
+        family = clean_text(row.get("Family"))
+        genus = clean_text(row.get("Genus"))
+
+        if not taxon_name or not synonym_name:
+            continue
+        if synonym_name.lower() == taxon_name.lower():
+            continue  # Skip self-synonyms
+
+        # Some synonym fields have multiple synonyms separated by " | "
+        for syn in synonym_name.split(" | "):
+            syn = syn.strip()
+            if not syn or syn.lower() == taxon_name.lower():
+                continue
+            dedup_key = (syn.lower(), taxon_name.lower())
+            if dedup_key in seen_synonyms:
+                continue
+            seen_synonyms.add(dedup_key)
+
+            # Parse genus from synonym
+            syn_parts = syn.split()
+            syn_genus = syn_parts[0] if syn_parts else None
+            # Handle hybrid prefix
+            if syn_genus and syn_genus in ('×', 'x') and len(syn_parts) > 1:
+                syn_genus = syn_parts[1]
+
+            synonym_rows.append((syn, syn_genus, taxon_name, genus, family, 'accession_csv'))
+
+    conn.executemany(
+        """INSERT INTO rag_synonyms (synonym_name, synonym_genus, accepted_name, accepted_genus, family, source)
+        VALUES (?, ?, ?, ?, ?, ?)""",
+        synonym_rows,
+    )
+    print(f"Inserted {len(synonym_rows):,} synonym mappings")
+
     conn.commit()
 
     counts = {
@@ -415,6 +455,7 @@ def build_index(config_path: str | None = None) -> dict[str, int]:
         "rag_items": conn.execute("SELECT COUNT(*) FROM rag_items").fetchone()[0],
         "rag_taxa": conn.execute("SELECT COUNT(*) FROM rag_taxa").fetchone()[0],
         "rag_filename_genus_index": conn.execute("SELECT COUNT(*) FROM rag_filename_genus_index").fetchone()[0],
+        "rag_synonyms": conn.execute("SELECT COUNT(*) FROM rag_synonyms").fetchone()[0],
     }
     conn.close()
     return counts

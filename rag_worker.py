@@ -220,6 +220,13 @@ class RAGWorker:
             curators_info = _txt("curators_info")
             iris_data_entered = _bool("iris_data_entered")
 
+            # Clean up any previous extraction for this card (re-processing)
+            old_ext = conn.execute("SELECT id FROM extractions WHERE card_id = ?", (card_id,)).fetchone()
+            if old_ext:
+                conn.execute("DELETE FROM accession_numbers WHERE extraction_id = ?", (old_ext[0],))
+                conn.execute("DELETE FROM extractions WHERE id = ?", (old_ext[0],))
+            conn.execute("DELETE FROM rag_contexts WHERE card_id = ?", (card_id,))
+
             cur = conn.execute(
                 """
                 INSERT INTO extractions

@@ -329,6 +329,12 @@ def process_card(conn, card, ollama_url, model, dpi, db_path='cards.db'):
         if not isinstance(all_acc, list):
             all_acc = []
 
+        # Clean up any previous extraction for this card (re-processing)
+        old_ext = conn.execute("SELECT id FROM extractions WHERE card_id = ?", (card_id,)).fetchone()
+        if old_ext:
+            conn.execute("DELETE FROM accession_numbers WHERE extraction_id = ?", (old_ext[0],))
+            conn.execute("DELETE FROM extractions WHERE id = ?", (old_ext[0],))
+
         # Build INSERT for extractions with all fields
         col_names = ["card_id"] + EXTRACTION_FIELDS + ["raw_json", "model", "dpi", "processing_time_s", "created_at"]
         col_placeholders = ", ".join(["?"] * len(col_names))

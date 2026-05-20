@@ -82,10 +82,12 @@ class RAGContextBuilder:
         # Build synonym lookup: accepted_name -> list of synonym_names
         syn_map: dict[str, list[str]] = {}
         extra_synonyms: list[tuple[str, str]] = []  # synonyms whose accepted name isn't in taxa_lines
-        taxa_set = {t.lower() for t in taxa_lines}
+        taxa_set = {t.lower() for t in taxa_lines if t}
         for row in synonym_rows:
             accepted = row["accepted_name"]
             synonym = row["synonym_name"]
+            if not accepted or not synonym:
+                continue
             if accepted.lower() in taxa_set:
                 syn_map.setdefault(accepted, []).append(synonym)
             else:
@@ -363,7 +365,7 @@ class RAGContextBuilder:
             genus = genera[0]
             genera_in_scope = [genus]
             ctx = self._get_genus_context(genus)
-            taxa_lines = [row["taxon_name_full"] for row in ctx["taxa_rows"][: self.max_taxa]]
+            taxa_lines = [row["taxon_name_full"] for row in ctx["taxa_rows"][: self.max_taxa] if row["taxon_name_full"]]
             accession_examples = self._pick_accession_examples(ctx["accession_rows"], self.max_accession_examples)
             suffixes = [row["item_suffix"] for row in ctx["suffix_rows"]]
             all_synonym_rows = ctx.get("synonym_rows", [])

@@ -331,10 +331,13 @@ class RAGWorker:
             return "error", elapsed
 
         except Exception as exc:
+            import traceback
+            tb = traceback.format_exc()
+            print(f"\n--- TRACEBACK for card {card_id} ---\n{tb}---\n", flush=True)
             elapsed = time.time() - start
             conn.execute(
                 "UPDATE cards SET status = 'error', error_message = ?, processed_at = ? WHERE id = ?",
-                (f"Unexpected error: {type(exc).__name__}: {exc}", now_iso(), card_id),
+                (f"Unexpected error: {type(exc).__name__}: {exc}\n{tb}", now_iso(), card_id),
             )
             conn.commit()
             return "error", elapsed

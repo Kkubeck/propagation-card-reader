@@ -44,6 +44,13 @@ EXTRACTIONS_COLUMNS = {
     "accession_number": "TEXT",
     "curators_info": "TEXT",
     "iris_data_entered": "INTEGER",
+    # Shadow columns hold pre-redaction text for fields where PII can land.
+    # Kept locally so regex tuning is reversible; dropped from any published
+    # export. Schema-of-the-canonical fields above remains unchanged.
+    "source_info_raw": "TEXT",
+    "curators_info_raw": "TEXT",
+    "collection_info_raw": "TEXT",
+    "propagation_text_raw": "TEXT",
 }
 
 ACCESSION_COLUMNS = {
@@ -62,6 +69,25 @@ CREATE TABLE IF NOT EXISTS rag_contexts (
     created_at TEXT NOT NULL,
     FOREIGN KEY (card_id) REFERENCES cards(id)
 );
+"""
+
+# Audit trail for every PII redaction made by privacy_redaction.redact().
+# `original` is the verbatim matched substring; treat the table as PII-bearing
+# and exclude from any published export.
+REDACTIONS_SQL = """
+CREATE TABLE IF NOT EXISTS redactions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    extraction_id INTEGER NOT NULL,
+    field TEXT NOT NULL,
+    category TEXT NOT NULL,
+    original TEXT NOT NULL,
+    start_offset INTEGER,
+    end_offset INTEGER,
+    created_at TEXT NOT NULL,
+    FOREIGN KEY (extraction_id) REFERENCES extractions(id)
+);
+CREATE INDEX IF NOT EXISTS idx_redactions_extraction ON redactions(extraction_id);
+CREATE INDEX IF NOT EXISTS idx_redactions_category ON redactions(category);
 """
 
 
@@ -89,6 +115,7 @@ def migrate(db_path: str):
         _ensure_columns(conn, "extractions", EXTRACTIONS_COLUMNS)
         _ensure_columns(conn, "accession_numbers", ACCESSION_COLUMNS)
         conn.execute(RAG_CONTEXTS_SQL)
+        conn.executescript(REDACTIONS_SQL)
         conn.commit()
     finally:
         conn.close()

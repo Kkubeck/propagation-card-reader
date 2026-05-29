@@ -11,6 +11,18 @@ import re
 import sqlite3
 from pathlib import Path
 
+from privacy_redaction import Redaction, redact
+
+# Fields that may contain incidentally-extracted donor PII.
+# `source_info` is the designed locus; the others are content fields where
+# PII appears only by accident.
+PII_PRONE_FIELDS: tuple[str, ...] = (
+    "source_info",
+    "curators_info",
+    "collection_info",
+    "propagation_text",
+)
+
 
 # --- Accession number patterns ---
 
@@ -333,6 +345,34 @@ def find_taxon_matches(botanical_name: str, family: str | None, rag_db_path: str
 
     conn.close()
     return matches
+
+
+def redact_pii_fields(extraction: dict) -> tuple[dict, dict[str, list[Redaction]]]:
+    """Apply privacy_redaction.redact to every PII-prone field.
+
+    Returns (redacted_extraction, audit_by_field). `redacted_extraction` is
+    a shallow copy of the input with PII-prone fields replaced by their
+    redacted form, plus a `*_raw` shadow key for each field that actually
+    had PII removed (so the caller can persist both forms). `audit_by_field`
+    maps the field name to its Redaction list — only present for fields
+    that matched something.
+
+    Non-string field values pass through untouched.
+    """
+    redacted: dict = dict(extraction)
+    audit: dict[str, list[Redaction]] = {}
+
+    for field in PII_PRONE_FIELDS:
+        value = extraction.get(field)
+        if not isinstance(value, str) or not value:
+            continue
+        new_value, matches = redact(value)
+        if matches:
+            redacted[field] = new_value
+            redacted[f"{field}_raw"] = value
+            audit[field] = matches
+
+    return redacted, audit
 
 
 def postprocess_extraction(

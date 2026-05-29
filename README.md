@@ -179,7 +179,7 @@ propagation-card-reader/
 - First attempt: hand-sample card images, label them, train a custom OCR model on the result
 - Idea was a model that genuinely understood propagation card handwriting and the field layout
 - **Failure mode:** the sample size needed to train a usable model from scratch was orders of magnitude beyond what one person at a public garden could practically produce. The project never reached a working prototype.
-- Not in git history — predates Kevin's use of version control (started 2022)
+- Not in git history — predates use of version control
 
 ### v2 — Cloud vision + field blocking (2025)
 - Pivot: stop trying to train a new model; use existing vision models (Google Cloud Vision)
@@ -230,8 +230,6 @@ PII-prone fields (`source_info`, `curators_info`, `collection_info`, `propagatio
 
 ## Further Reading
 
-- `docs/paper-outline.md` — BGCI Technical Review draft outline
-- `docs/paper-structural-notes-s1-s5.md` — section scaffolding (§1 intro, §5 local-first argument)
 - `ACCESSION-FORMATS.md` — legacy vs. modern accession number formats
 - `SPEC-RAG-PIPELINE.md` — RAG taxonomy design
 

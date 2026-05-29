@@ -17,7 +17,7 @@ from worker import process_batch
 
 DEFAULT_DB = "cards.db"
 DEFAULT_OLLAMA = "http://192.168.1.120:11434"
-DEFAULT_MODEL = "qwen2.5vl:3b"
+DEFAULT_MODEL = "qwen2.5vl:7b"
 DEFAULT_DPI = 100
 DEFAULT_RAG_DB = "rag.db"
 DEFAULT_CONFIG = "config.yaml"

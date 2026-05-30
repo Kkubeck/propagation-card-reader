@@ -1,0 +1,9 @@
+# churro/ — extra Python deps beyond the stdlib.
+# Install with: pip install -r requirements.txt
+#
+# CHURRO itself is installed separately via:
+#   uv tool install churro-ocr
+
+# PDF -> PNG rasterization. Only needed if --cards-dir contains
+# *.pdf files (the typical case for the DeweyRunner USB stick).
+pymupdf>=1.24

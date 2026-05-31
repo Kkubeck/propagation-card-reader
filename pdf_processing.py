@@ -1,5 +1,5 @@
 # pdf_processing.py
-import fitz  # PyMuPDF
+import pymupdf as fitz  # PyMuPDF
 import os
 
 def convert_page_to_image(doc, page_number, output_folder="output_images"):

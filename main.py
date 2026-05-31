@@ -1,6 +1,6 @@
 # main.py
 import os
-import fitz  # PyMuPDF
+import pymupdf as fitz  # PyMuPDF
 import csv
 import cv2
 

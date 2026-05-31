@@ -5,7 +5,7 @@ import json
 import re
 import time
 
-import fitz  # PyMuPDF
+import pymupdf as fitz  # PyMuPDF
 import requests
 
 from schema import get_db, now_iso

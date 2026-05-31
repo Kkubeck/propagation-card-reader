@@ -1,7 +1,7 @@
 """PDF scanner — builds card inventory from PDF files."""
 
 import os
-import fitz  # PyMuPDF
+import pymupdf asfitz  # PyMuPDF
 from schema import get_db, now_iso
 
 

@@ -18,6 +18,13 @@ CARDS_COLUMNS = {
     "duplex_flag": "INTEGER DEFAULT 0",
     "excluded_reason": "TEXT",
     "filename_hint_json": "TEXT",
+    # Duplex pairing: for an N-page *_duplex* PDF, pages 1..N/2 are fronts and
+    # pages N/2+1..N are backs (Kevin reshuffles between scans, so order is
+    # preserved and no reversal is needed). card_face is 'front'|'back';
+    # pair_id = i links front page i to back page N/2+i within the same PDF.
+    # Both NULL for ordinary single-sided cards.
+    "card_face": "TEXT",
+    "pair_id": "INTEGER",
 }
 
 EXTRACTIONS_COLUMNS = {

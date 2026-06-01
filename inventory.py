@@ -1,8 +1,9 @@
 """PDF scanner — builds card inventory from PDF files."""
 
 import os
-import pymupdf asfitz  # PyMuPDF
+import pymupdf as fitz  # PyMuPDF
 from schema import get_db, now_iso
+from filename_parser import parse_filename
 
 
 def build_inventory(pdf_dir, db_path, run_id):
@@ -66,3 +67,71 @@ def build_inventory(pdf_dir, db_path, run_id):
     print(f"Total pages:     {total_pages}")
     print(f"New cards added: {new_cards}")
     print(f"Already existed: {existing_cards}")
+
+    # Assign front/back pairing for any duplex PDFs now in the inventory.
+    assign_duplex_pairing(db_path)
+
+
+def assign_duplex_pairing(db_path):
+    """Assign card_face + pair_id to the pages of duplex PDFs. Idempotent.
+
+    Duplex detection reuses filename_parser.parse_filename (filename markers).
+    Kevin reshuffles cards between front/back scan passes, so for an N-page
+    duplex PDF the page order is: pages [0 .. N/2-1] are fronts (in order) and
+    pages [N/2 .. N-1] are backs (same order). pair_id links front i to back i;
+    no reversal math is needed.
+
+    Odd-paged duplex PDFs cannot be paired (e.g. a missed/extra scan) and are
+    flagged via excluded_reason rather than guessed at. Single-sided PDFs are
+    left untouched (card_face / pair_id stay NULL).
+
+    Re-running overwrites the same deterministic values, so it is safe to call
+    after every inventory pass.
+    """
+    conn = get_db(db_path)
+    try:
+        pdf_paths = [row[0] for row in conn.execute("SELECT DISTINCT pdf_path FROM cards")]
+        duplex_pdfs = paired = skipped_odd = 0
+
+        for pdf_path in pdf_paths:
+            if not parse_filename(os.path.basename(pdf_path)).get("duplex"):
+                continue
+            duplex_pdfs += 1
+            pages = [row[0] for row in conn.execute(
+                "SELECT page_num FROM cards WHERE pdf_path = ? ORDER BY page_num",
+                (pdf_path,),
+            )]
+            n = len(pages)
+            if n == 0:
+                continue
+            if n % 2 != 0:
+                # Cannot pair an odd page count — flag, don't guess.
+                conn.execute(
+                    """UPDATE cards
+                       SET duplex_flag = 1,
+                           excluded_reason = ?
+                       WHERE pdf_path = ?""",
+                    (f"odd page count ({n}) in duplex PDF — cannot pair fronts/backs", pdf_path),
+                )
+                skipped_odd += 1
+                continue
+            half = n // 2
+            for idx, page_num in enumerate(pages):
+                face, pair_id = ("front", idx) if idx < half else ("back", idx - half)
+                conn.execute(
+                    """UPDATE cards
+                       SET duplex_flag = 1,
+                           card_face = ?,
+                           pair_id = ?
+                       WHERE pdf_path = ? AND page_num = ?""",
+                    (face, pair_id, pdf_path, page_num),
+                )
+                paired += 1
+        conn.commit()
+    finally:
+        conn.close()
+
+    print(f"\n--- Duplex Pairing ---")
+    print(f"Duplex PDFs:     {duplex_pdfs}")
+    print(f"Pages paired:    {paired}")
+    print(f"Odd PDFs skipped: {skipped_odd}")

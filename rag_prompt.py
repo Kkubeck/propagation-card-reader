@@ -115,17 +115,19 @@ ACCESSION NUMBER FORMATS:
 - Modern: YYYY-NNNNN (e.g. 2015-00634)
 Handwritten numbers sometimes have trailing zeros dropped or spacing collapsed. Capture what is written; do not pad or invent digits.
 
-Return ONLY valid JSON. The "mode" value must be exactly one of: "table_continuation", "narrative_notes", "blank".
+Return ONLY a JSON object with exactly these fields:
+- "mode": one of "table_continuation", "narrative_notes", "blank"
+- "propagation_text": verbatim transcription of the handwriting on this card; use "" (empty string) if the card is blank
+- "all_accession_numbers": array of accession-format numbers ACTUALLY WRITTEN ON THIS CARD IMAGE; use [] if none. NEVER copy a number from the FRONT-SIDE CONTEXT below.
+- "curators_info": right-side curatorial notes if present, otherwise null
+- "notes": anything that does not fit the fields above, otherwise null
 
-{{
-  "mode": "table_continuation",
-  "propagation_text": "string — full transcription, empty string if blank",
-  "all_accession_numbers": ["array of any accession-format strings visible"],
-  "curators_info": "string or null — right-side notes if present",
-  "notes": "string or null — anything that doesn't fit the above"
-}}
+Do not echo these field descriptions. Fill each field with the real content of the card.
 
-FRONT-SIDE CONTEXT (for reference only, do not copy):
+Example output for a blank back:
+{{"mode": "blank", "propagation_text": "", "all_accession_numbers": [], "curators_info": null, "notes": null}}
+
+FRONT-SIDE CONTEXT (for reference only, never copy into your answer):
 {front_context}"""
 
 
@@ -137,9 +139,12 @@ def format_front_context(front: dict) -> str:
 
     Keeps it short to anchor the back without polluting the transcription.
     """
+    # NOTE: accession_number is deliberately NOT included here. The 3B model
+    # copies any accession it sees in the context block straight into
+    # all_accession_numbers (confirmed leak, 2026-05-31). Botanical name,
+    # family, and the propagation tail anchor the back without that risk.
     bn = front.get("botanical_name") or "(unknown)"
     fam = front.get("family") or "(unknown)"
-    acc = front.get("accession_number") or "(none recorded on front)"
     tail = (front.get("propagation_tail") or "").strip()
     if len(tail) > 200:
         tail = tail[-200:]
@@ -147,7 +152,6 @@ def format_front_context(front: dict) -> str:
     return (
         f"Botanical name: {bn}\n"
         f"Family: {fam}\n"
-        f"Accession number (front): {acc}\n"
         f"{tail_line}"
     )
 

@@ -59,6 +59,9 @@ def cmd_inventory(args):
         sys.exit(1)
 
     init_db(db_path)
+    # Ensure Phase-2 columns exist (incl. card_face/pair_id) before inventory,
+    # since build_inventory runs duplex pairing which writes those columns.
+    migrate(db_path)
     conn = get_db(db_path)
 
     run_id = _create_processing_run(conn, args, f"inventory scan of {pdf_dir}")

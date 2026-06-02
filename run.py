@@ -12,7 +12,6 @@ from rag_config import load_config
 from rag_worker import RAGWorker
 from schema import get_db, init_db, now_iso
 from schema_migrations import migrate
-from worker import process_batch
 
 
 DEFAULT_DB = "cards.db"
@@ -82,15 +81,19 @@ def cmd_process(args):
         sys.exit(1)
 
     init_db(db_path)
+    # Always migrate: both modes now run through RAGWorker, whose duplex routing
+    # depends on the card_face / pair_id columns added by migrate().
+    migrate(db_path)
+
     requested_mode = args.mode
     effective_mode = requested_mode
     config = None
+    rag_db_path = None
     prompt_version = None
     rag_index_version = None
     note_text = f"processing batch={args.batch}"
 
     if requested_mode == "rag_prompt":
-        migrate(db_path)
         config = load_config(args.config)
         rag_db_path = args.rag_db or config.get("rag_db_path", DEFAULT_RAG_DB)
         if not os.path.isabs(rag_db_path):
@@ -101,40 +104,35 @@ def cmd_process(args):
         if not os.path.exists(rag_db_path):
             print(f"Warning: rag.db not found at {rag_db_path}; falling back to ocr_only mode.")
             effective_mode = "ocr_only"
+            rag_db_path = None
             prompt_version = prompt_cfg.get("baseline_version", "v1.0-baseline")
-            note_text += f" | requested_mode=rag_prompt fallback_missing_rag_db={rag_db_path}"
+            note_text += f" | requested_mode=rag_prompt fallback_missing_rag_db"
         else:
             note_text += f" | mode=rag_prompt rag_db={rag_db_path}"
+    else:
+        note_text += " | mode=ocr_only"
+
     conn = get_db(db_path)
     run_id = _create_processing_run(
         conn,
         args,
         note_text,
-        pipeline_mode=effective_mode if requested_mode == "rag_prompt" else None,
+        pipeline_mode=effective_mode,
         prompt_version=prompt_version,
         rag_index_version=rag_index_version,
     )
     conn.commit()
     conn.close()
 
-    if effective_mode == "rag_prompt":
-        worker = RAGWorker(
-            db_path=db_path,
-            rag_db_path=rag_db_path,
-            config=config,
-            mode=effective_mode,
-        )
-        worker.process_batch(
-            db_path=db_path,
-            run_id=run_id,
-            ollama_url=args.ollama,
-            model=args.model,
-            dpi=args.dpi,
-            batch_size=args.batch,
-        )
-        return
-
-    process_batch(
+    # Single worker for both modes. In ocr_only it skips retrieval (no rag.db
+    # needed) but still applies duplex front/back routing.
+    worker = RAGWorker(
+        db_path=db_path,
+        rag_db_path=rag_db_path,
+        config=config or {},
+        mode=effective_mode,
+    )
+    worker.process_batch(
         db_path=db_path,
         run_id=run_id,
         ollama_url=args.ollama,

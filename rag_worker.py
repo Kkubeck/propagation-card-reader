@@ -56,7 +56,11 @@ class RAGWorker:
         self.rag_db_path = rag_db_path
         self.config = config or {}
         self.mode = mode
-        self.context_builder = RAGContextBuilder(rag_db_path, self.config)
+        # ocr_only (incl. duplex-only runs) needs no retrieval index, so don't
+        # build — or require — a RAGContextBuilder/rag.db in that mode.
+        self.context_builder = (
+            RAGContextBuilder(rag_db_path, self.config) if mode != "ocr_only" else None
+        )
         prompt_cfg = self.config.get("rag", {}).get("prompt", {})
         self.prompt_version = prompt_cfg.get(
             "version" if mode != "ocr_only" else "baseline_version",
@@ -64,7 +68,8 @@ class RAGWorker:
         )
 
     def close(self):
-        self.context_builder.close()
+        if self.context_builder is not None:
+            self.context_builder.close()
 
     @staticmethod
     def _normalize_botanical_name(name: Any) -> str:

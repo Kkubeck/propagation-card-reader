@@ -13,7 +13,7 @@ import requests
 
 from filename_parser import parse_filename
 from rag_context_builder import RAGContextBuilder
-from rag_prompt import build_prompt
+from rag_prompt import build_prompt, build_back_prompt, format_front_context, VALID_BACK_MODES
 from schema import get_db, now_iso
 from worker import extract_page_image, parse_json_response
 
@@ -126,14 +126,27 @@ class RAGWorker:
         )
         conn.commit()
 
-        if duplex_flag:
+        # Duplex routing. card_face / pair_id were assigned at inventory time by
+        # inventory.assign_duplex_pairing; the UPDATE above just cleared
+        # excluded_reason, so use the in-memory row value to restore it below.
+        card_face = card["card_face"]
+        if duplex_flag and card_face is None:
+            # Page belongs to a duplex PDF that pairing could not resolve (e.g.
+            # an odd page count). Don't guess a front/back role — exclude it and
+            # keep the pairing diagnostic rather than overwriting it.
+            reason = card["excluded_reason"] or "unpaired duplex page (no card_face)"
             conn.execute(
                 "UPDATE cards SET status = 'excluded', excluded_reason = ?, processed_at = ? WHERE id = ?",
-                ("duplex_flag", now_iso(), card_id),
+                (reason, now_iso(), card_id),
             )
             conn.commit()
             return "excluded", 0.0
 
+        if card_face == "back":
+            return self._process_back_card(conn, card, ollama_url, model, dpi)
+
+        # front faces and ordinary single-sided cards fall through to the
+        # standard front-side extraction below.
         start = time.time()
         context_payload = {
             "context_text": "",
@@ -338,6 +351,158 @@ class RAGWorker:
             conn.execute(
                 "UPDATE cards SET status = 'error', error_message = ?, processed_at = ? WHERE id = ?",
                 (f"Unexpected error: {type(exc).__name__}: {exc}\n{tb}", now_iso(), card_id),
+            )
+            conn.commit()
+            return "error", elapsed
+
+    def _load_front_context(self, conn, card) -> dict | None:
+        """Return the paired front card's extraction as a FrontContext dict.
+
+        Looks the front up by pdf_path + pair_id. Returns None if the front has
+        not been successfully extracted yet; the back is then transcribed
+        without front anchoring rather than deferred (id-ordered batches process
+        fronts before backs, so a missing front means the front failed).
+        """
+        front = conn.execute(
+            """
+            SELECT e.botanical_name, e.family, e.accession_number, e.propagation_text
+            FROM cards c
+            JOIN extractions e ON e.card_id = c.id
+            WHERE c.pdf_path = ? AND c.card_face = 'front' AND c.pair_id = ?
+                  AND c.status = 'success'
+            LIMIT 1
+            """,
+            (card["pdf_path"], card["pair_id"]),
+        ).fetchone()
+        if not front:
+            return None
+        prop = front["propagation_text"] or ""
+        return {
+            "botanical_name": front["botanical_name"],
+            "family": front["family"],
+            "accession_number": front["accession_number"],
+            "propagation_tail": prop[-200:],
+        }
+
+    def _process_back_card(self, conn, card, ollama_url, model, dpi):
+        """OCR a duplex back-side card with the back prompt + front context.
+
+        Stores the back as its own extraction row (linked to the front by
+        pdf_path + pair_id). Front and back stay separate here and are merged at
+        export time (Option A). The detected back mode is recorded in `notes`.
+        """
+        card_id = card["id"]
+        pdf_path = card["pdf_path"]
+        page_num = card["page_num"]
+        start = time.time()
+
+        try:
+            front_ctx = self._load_front_context(conn, card)
+            prompt_text = build_back_prompt(front_ctx)
+
+            images_dir = os.path.join(os.path.dirname(self.db_path) if os.path.dirname(self.db_path) else ".", "images")
+            image_b64, image_path = extract_page_image(pdf_path, page_num, dpi, images_dir=images_dir)
+            if image_path:
+                conn.execute("UPDATE cards SET image_path = ? WHERE id = ?", (image_path, card_id))
+
+            raw_response = call_ollama_with_prompt(ollama_url, model, image_b64, prompt_text)
+            data = parse_json_response(raw_response)
+            elapsed = time.time() - start
+
+            mode = str(data.get("mode", "")).strip().lower()
+            if mode not in VALID_BACK_MODES:
+                mode = "unknown"
+            propagation_text = self._normalize_propagation_text(data.get("propagation_text", ""))
+            curators_info = data.get("curators_info")
+            curators_info = str(curators_info).strip() if curators_info else None
+            accessions = self._normalize_accessions(data.get("all_accession_numbers", []))
+
+            # Record back mode (+ any missing-front note) in `notes` so it is
+            # queryable without parsing raw_json.
+            note_parts = [f"back_mode={mode}"]
+            if front_ctx is None:
+                note_parts.append("front_context=missing")
+            extra = data.get("notes")
+            if extra and str(extra).strip():
+                note_parts.append(str(extra).strip())
+            notes = "; ".join(note_parts)
+
+            # Re-processing: clear any prior extraction for this back card.
+            old_ext = conn.execute("SELECT id FROM extractions WHERE card_id = ?", (card_id,)).fetchone()
+            if old_ext:
+                conn.execute("DELETE FROM accession_numbers WHERE extraction_id = ?", (old_ext[0],))
+                conn.execute("DELETE FROM extractions WHERE id = ?", (old_ext[0],))
+            conn.execute("DELETE FROM rag_contexts WHERE card_id = ?", (card_id,))
+
+            cur = conn.execute(
+                """
+                INSERT INTO extractions
+                    (card_id, propagation_text, curators_info, notes,
+                     raw_json, model, dpi, processing_time_s, created_at,
+                     prompt_text, prompt_context)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    card_id, propagation_text, curators_info, notes,
+                    raw_response, model, dpi, elapsed, now_iso(),
+                    prompt_text, format_front_context(front_ctx) if front_ctx else None,
+                ),
+            )
+            extraction_id = cur.lastrowid
+
+            for pos, accession in enumerate(accessions):
+                normalized_accession = self._normalize_accession_value(accession)
+                conn.execute(
+                    """
+                    INSERT INTO accession_numbers
+                        (extraction_id, accession_number, position, normalized_accession_number, format_type)
+                    VALUES (?, ?, ?, ?, ?)
+                    """,
+                    (extraction_id, accession, pos, normalized_accession, self._classify_accession(normalized_accession)),
+                )
+
+            conn.execute(
+                "UPDATE cards SET status = 'success', processed_at = ?, excluded_reason = NULL WHERE id = ?",
+                (now_iso(), card_id),
+            )
+            conn.commit()
+            return "success", elapsed
+
+        except json.JSONDecodeError as exc:
+            elapsed = time.time() - start
+            conn.execute(
+                "UPDATE cards SET status = 'failed', error_message = ?, processed_at = ? WHERE id = ?",
+                (f"JSON parse error (back): {exc}", now_iso(), card_id),
+            )
+            conn.commit()
+            return "failed", elapsed
+
+        except requests.exceptions.Timeout:
+            elapsed = time.time() - start
+            conn.execute(
+                "UPDATE cards SET status = 'error', error_message = ?, processed_at = ? WHERE id = ?",
+                (f"Ollama timeout after {elapsed:.0f}s (back)", now_iso(), card_id),
+            )
+            conn.commit()
+            return "error", elapsed
+
+        except requests.exceptions.RequestException as exc:
+            elapsed = time.time() - start
+            conn.execute(
+                "UPDATE cards SET status = 'error', error_message = ?, processed_at = ? WHERE id = ?",
+                (f"Ollama request error (back): {exc}", now_iso(), card_id),
+            )
+            conn.commit()
+            return "error", elapsed
+
+        except Exception as exc:
+            import traceback
+            tb = traceback.format_exc()
+            print(f"\n--- TRACEBACK for back card {card_id} ---\n{tb}---\n", flush=True)
+            elapsed = time.time() - start
+            conn.execute(
+                "UPDATE cards SET status = 'error', error_message = ?, processed_at = ? WHERE id = ?",
+                (f"Unexpected error (back): {type(exc).__name__}: {exc}\n{tb}", now_iso(), card_id),
             )
             conn.commit()
             return "error", elapsed

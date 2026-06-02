@@ -197,8 +197,24 @@ def cmd_status(args):
     conn.close()
 
 
+def _merge_accession_strings(front_str, back_str):
+    """Union two ' | '-joined accession strings, preserving order, no dupes."""
+    seen = []
+    for part in (front_str or "").split(" | ") + (back_str or "").split(" | "):
+        p = part.strip()
+        if p and p not in seen:
+            seen.append(p)
+    return " | ".join(seen)
+
+
 def cmd_export(args):
-    """Export results to CSV."""
+    """Export results to CSV.
+
+    Duplex backs are folded into their paired front (Option A): the back's
+    propagation_text is appended to the front under a '— BACK —' separator and
+    the back's accession numbers are unioned into all_accession_numbers. A back
+    whose front is missing/failed is emitted standalone so its data is not lost.
+    """
     db_path = args.db
     output = args.output
 
@@ -224,6 +240,8 @@ def cmd_export(args):
             c.pdf_path,
             c.page_num,
             c.status,
+            c.card_face,
+            c.pair_id,
             e.processing_time_s,
             {ext_select},
             GROUP_CONCAT(a.accession_number, ' | ') AS all_accession_numbers
@@ -239,20 +257,52 @@ def cmd_export(args):
         "pdf_file", "page_num", "status", "processing_time_s",
     ] + ext_fields + ["all_accession_numbers"]
 
+    def _row_dict(row):
+        d = {f: (row[f] if row[f] is not None else "") for f in ext_fields}
+        d["pdf_file"] = os.path.basename(row["pdf_path"]) if row["pdf_path"] else ""
+        d["page_num"] = row["page_num"]
+        d["status"] = row["status"]
+        d["processing_time_s"] = f"{row['processing_time_s']:.1f}" if row["processing_time_s"] else ""
+        d["all_accession_numbers"] = row["all_accession_numbers"] or ""
+        return d
+
+    # ORDER BY pdf_path, page_num guarantees each duplex front is seen before
+    # its back (fronts are the first half of a duplex PDF's pages).
+    fronts = {}   # (pdf_path, pair_id) -> emitted front row dict
+    emitted = []
+
+    for row in rows:
+        face = row["card_face"]
+        d = _row_dict(row)
+        if face == "front":
+            fronts[(row["pdf_path"], row["pair_id"])] = d
+            emitted.append(d)
+        elif face == "back":
+            front = fronts.get((row["pdf_path"], row["pair_id"]))
+            if front is None:
+                # No paired front (front failed/missing) — emit standalone.
+                d["status"] = f"{d['status']} (orphan back)"
+                emitted.append(d)
+                continue
+            back_text = (d.get("propagation_text") or "").strip()
+            if back_text:
+                front_text = front.get("propagation_text") or ""
+                front["propagation_text"] = (
+                    f"{front_text}\n— BACK —\n{back_text}" if front_text else back_text
+                )
+            front["all_accession_numbers"] = _merge_accession_strings(
+                front["all_accession_numbers"], d["all_accession_numbers"]
+            )
+        else:
+            emitted.append(d)
+
     with open(output, "w", newline="", encoding="utf-8") as f:
         writer = csv.writer(f)
         writer.writerow(csv_headers)
-        for row in rows:
-            pdf_file = os.path.basename(row["pdf_path"]) if row["pdf_path"] else ""
-            time_s = f"{row['processing_time_s']:.1f}" if row["processing_time_s"] else ""
-            field_values = [row[f] if row[f] is not None else "" for f in ext_fields]
-            writer.writerow(
-                [pdf_file, row["page_num"], row["status"], time_s]
-                + field_values
-                + [row["all_accession_numbers"] or ""]
-            )
+        for d in emitted:
+            writer.writerow([d.get(h, "") for h in csv_headers])
 
-    print(f"Exported {len(rows)} rows to {output}")
+    print(f"Exported {len(emitted)} rows to {output}")
     conn.close()
 
 

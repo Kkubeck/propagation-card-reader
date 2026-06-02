@@ -67,24 +67,29 @@ def run_one(ollama_url: str, model: str, image_path: str, front_ctx: dict) -> st
     with open(image_path, "rb") as f:
         img_b64 = base64.b64encode(f.read()).decode()
     prompt = build_back_prompt(front_ctx)
+    # Match the production pipeline: /api/chat is required for vision models in
+    # Ollama >=0.23.4 (rag_worker.call_ollama_with_prompt uses the same shape).
     r = requests.post(
-        ollama_url,
+        f"{ollama_url.rstrip('/')}/api/chat",
         json={
             "model": model,
-            "prompt": prompt,
-            "images": [img_b64],
+            "messages": [
+                {"role": "user", "content": prompt, "images": [img_b64]}
+            ],
             "stream": False,
             "options": {"num_predict": 1024, "temperature": 0.1},
         },
         timeout=300,
     )
     r.raise_for_status()
-    return r.json().get("response", "").strip()
+    return r.json().get("message", {}).get("content", "").strip()
 
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--ollama", default="http://192.168.1.120:11434/api/generate")
+    # Base URL only (no path). Defaults to TUF + 3B for a quick free gate;
+    # on the Mac run with: --ollama http://localhost:11434 --model qwen2.5vl:7b
+    ap.add_argument("--ollama", default="http://192.168.1.120:11434")
     ap.add_argument("--model", default="qwen2.5vl:3b")
     args = ap.parse_args()
 

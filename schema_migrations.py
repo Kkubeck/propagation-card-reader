@@ -51,6 +51,9 @@ EXTRACTIONS_COLUMNS = {
     "accession_number": "TEXT",
     "curators_info": "TEXT",
     "iris_data_entered": "INTEGER",
+    # Provenance for botanical_name: NULL/'ocr' = transcribed from the card;
+    # 'accession_lookup' = back-filled from rag_accessions via the accession.
+    "botanical_name_source": "TEXT",
     # Shadow columns hold pre-redaction text for fields where PII can land.
     # Kept locally so regex tuning is reversible; dropped from any published
     # export. Schema-of-the-canonical fields above remains unchanged.

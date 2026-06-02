@@ -22,10 +22,13 @@ LEGACY_RE = re.compile(r"^(?:0\d{5}-\d{4}-\d{4}|\d{5}-\d{3}-\d{2})(?:\.\d{1,2})?
 MODERN_RE = re.compile(r"^\d{4}-\d{4,5}(?:\.\d{1,2})?$")
 
 
-def call_ollama_with_prompt(ollama_url: str, model: str, image_b64: str, prompt_text: str) -> str:
+def call_ollama_with_prompt(ollama_url: str, model: str, image_b64: str, prompt_text: str,
+                            temperature: float = 0.1, num_predict: int = 2048) -> str:
     """Send image + prompt to Ollama vision API and return the response text.
-    
-    Uses /api/chat (required for vision models in Ollama >=0.23.4).
+
+    Uses /api/chat (required for vision models in Ollama >=0.23.4). temperature
+    and num_predict default to the production values; the convergence experiment
+    overrides temperature to study read stability.
     """
     url = f"{ollama_url}/api/chat"
     payload = {
@@ -39,8 +42,8 @@ def call_ollama_with_prompt(ollama_url: str, model: str, image_b64: str, prompt_
         ],
         "stream": False,
         "options": {
-            "temperature": 0.1,
-            "num_predict": 2048,  # Expanded for 22-field schema
+            "temperature": temperature,
+            "num_predict": num_predict,
         },
     }
     response = requests.post(url, json=payload, timeout=300)

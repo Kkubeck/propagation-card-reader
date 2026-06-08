@@ -14,6 +14,8 @@ source("R/modules_coverage.R")
 source("R/modules_query.R")
 source("R/modules_compare.R")
 
+images_dir <- find_images_dir(".")
+
 ui <- bslib::page_sidebar(
   title = "Propagation Card Reader - DB Viewer",
   theme = bslib::bs_theme(version = 5, bootswatch = "minty"),
@@ -37,6 +39,10 @@ ui <- bslib::page_sidebar(
 )
 
 server <- function(input, output, session) {
+  if (!is.null(images_dir)) {
+    shiny::addResourcePath("card_images", images_dir)
+  }
+
   app_defaults <- default_db_candidates(".")
   conn_state <- reactiveVal(NULL)
 
@@ -112,7 +118,7 @@ server <- function(input, output, session) {
     )
   })
 
-  cards_server("cards", active_conn, active_db_validation)
+  cards_server("cards", active_conn, active_db_validation, images_dir)
   coverage_server("coverage", active_conn, active_db_validation)
   query_server("query", active_conn, active_db_validation)
   compare_server("compare", active_conn, active_db_validation, app_defaults)

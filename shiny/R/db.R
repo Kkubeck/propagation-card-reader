@@ -2,6 +2,17 @@
   if (is.null(x)) y else x
 }
 
+find_images_dir <- function(app_dir = ".") {
+  candidates <- c(
+    fs::path(app_dir, "images"),
+    fs::path(app_dir, "..", "images")
+  )
+  for (candidate in candidates) {
+    if (fs::dir_exists(candidate)) return(fs::path_abs(candidate))
+  }
+  NULL
+}
+
 extraction_fields <- c(
   "botanical_name", "family", "geocode", "received_as", "quantity",
   "date_received", "present_location", "wanted_for_area", "source",

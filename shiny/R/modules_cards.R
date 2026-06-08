@@ -16,7 +16,7 @@ cards_ui <- function(id) {
   )
 }
 
-cards_server <- function(id, conn, validation) {
+cards_server <- function(id, conn, validation, images_dir = NULL) {
   shiny::moduleServer(id, function(input, output, session) {
     observe({
       current_validation <- validation()
@@ -85,6 +85,22 @@ cards_server <- function(id, conn, validation) {
       detail_blocks <- list(
         shiny::h4(sprintf("%s - %s", card$botanical_name[[1]] %||% "Unknown", card$accession_number[[1]] %||% "-"))
       )
+
+      img_tag <- NULL
+      if (!is.null(images_dir) && !is.null(card$image_path[[1]]) && nzchar(card$image_path[[1]])) {
+        img_file <- basename(card$image_path[[1]])
+        img_full <- file.path(images_dir, img_file)
+        if (file.exists(img_full)) {
+          img_tag <- shiny::tags$img(
+            src = paste0("card_images/", img_file),
+            style = "max-width: 100%; border: 1px solid #ccc; margin-bottom: 1em;"
+          )
+        }
+      }
+
+      if (!is.null(img_tag)) {
+        detail_blocks <- c(detail_blocks, list(img_tag))
+      }
 
       if (!is.null(card$pdf_path[[1]]) && nzchar(card$pdf_path[[1]])) {
         detail_blocks <- c(detail_blocks, list(shiny::p(shiny::strong("PDF path:"), shiny::code(card$pdf_path[[1]]))))

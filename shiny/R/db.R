@@ -3,10 +3,10 @@
 }
 
 find_images_dir <- function(app_dir = ".") {
-  candidates <- c(
-    fs::path(app_dir, "images"),
-    fs::path(app_dir, "..", "images")
-  )
+  folder_names <- c("images", "propagation-card-images", "propagation_card_images", "card-images")
+  candidates <- unlist(lapply(folder_names, function(name) {
+    c(fs::path(app_dir, name), fs::path(app_dir, "..", name))
+  }))
   for (candidate in candidates) {
     if (fs::dir_exists(candidate)) return(fs::path_abs(candidate))
   }

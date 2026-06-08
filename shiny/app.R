@@ -95,15 +95,17 @@ server <- function(input, output, session) {
     color <- if (validation$valid) "#1a7f37" else "#b42318"
     div(
       p(strong("Active DB:"), br(), code(path)),
-      p(style = sprintf("color:%s;", color), validation$message),
+      p(style = sprintf("color:%s;", color), validation$message %||% ""),
       p(strong("Size:"), size_text)
     )
   })
 
   output$status_ui <- renderUI({
     validation <- active_db_validation()
-    validate(need(validation$valid, validation$message))
-    status <- get_status_summary(active_conn())
+    validate(need(validation$valid, validation$message %||% "Database not ready."))
+    conn <- active_conn()
+    req(conn)
+    status <- get_status_summary(conn)
     success <- status_count_value(status, "success")
     failed <- status_count_value(status, "failed")
     error_count <- status_count_value(status, "error")

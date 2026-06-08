@@ -15,6 +15,7 @@ source("R/modules_query.R")
 source("R/modules_compare.R")
 
 images_dir <- find_images_dir(".")
+pdf_roots <- find_pdf_source_roots(".")
 
 ui <- bslib::page_sidebar(
   title = "Propagation Card Reader - DB Viewer",
@@ -120,7 +121,7 @@ server <- function(input, output, session) {
     )
   })
 
-  cards_server("cards", active_conn, active_db_validation, images_dir)
+  cards_server("cards", active_conn, active_db_validation, images_dir, pdf_roots)
   coverage_server("coverage", active_conn, active_db_validation)
   query_server("query", active_conn, active_db_validation)
   compare_server("compare", active_conn, active_db_validation, app_defaults)

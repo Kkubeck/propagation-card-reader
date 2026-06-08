@@ -13,6 +13,41 @@ find_images_dir <- function(app_dir = ".") {
   NULL
 }
 
+has_pdftools <- function() {
+  requireNamespace("pdftools", quietly = TRUE)
+}
+
+find_pdf_source_roots <- function(app_dir = ".") {
+  folder_names <- c("propagation_cards_historical", "OCR_test", "pdfs", "pdf-source")
+  candidates <- unlist(lapply(folder_names, function(name) {
+    c(fs::path(app_dir, name), fs::path(app_dir, "..", name))
+  }))
+  roots <- candidates[vapply(candidates, fs::dir_exists, logical(1))]
+  if (length(roots) > 0) fs::path_abs(roots) else character(0)
+}
+
+resolve_pdf_path <- function(db_pdf_path, pdf_roots) {
+  if (is.null(db_pdf_path) || !nzchar(db_pdf_path)) return(NULL)
+  if (file.exists(db_pdf_path)) return(db_pdf_path)
+  filename <- basename(db_pdf_path)
+  for (root in pdf_roots) {
+    candidate <- file.path(root, filename)
+    if (file.exists(candidate)) return(candidate)
+  }
+  NULL
+}
+
+render_pdf_page <- function(pdf_path, page_num, dpi = 150) {
+  if (!has_pdftools()) return(NULL)
+  if (is.null(pdf_path) || !file.exists(pdf_path)) return(NULL)
+  page_idx <- as.integer(page_num) + 1L
+  tryCatch({
+    tmp <- tempfile(fileext = ".png")
+    pdftools::pdf_convert(pdf_path, format = "png", pages = page_idx, dpi = dpi, filenames = tmp, verbose = FALSE)
+    if (file.exists(tmp)) tmp else NULL
+  }, error = function(e) NULL)
+}
+
 extraction_fields <- c(
   "botanical_name", "family", "geocode", "received_as", "quantity",
   "date_received", "present_location", "wanted_for_area", "source",

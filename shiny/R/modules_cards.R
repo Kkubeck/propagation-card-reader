@@ -12,11 +12,14 @@ cards_ui <- function(id) {
     ),
     DT::DTOutput(ns("cards_table")),
     shiny::hr(),
-    shiny::uiOutput(ns("card_detail_ui"))
+    shiny::fluidRow(
+      shiny::column(6, shiny::uiOutput(ns("card_image_ui"))),
+      shiny::column(6, shiny::uiOutput(ns("card_detail_ui")))
+    )
   )
 }
 
-cards_server <- function(id, conn, validation, images_dir = NULL) {
+cards_server <- function(id, conn, validation, images_dir = NULL, pdf_roots = character(0)) {
   shiny::moduleServer(id, function(input, output, session) {
     observe({
       current_validation <- validation()
@@ -82,6 +85,39 @@ cards_server <- function(id, conn, validation, images_dir = NULL) {
       df[row_index, , drop = FALSE]
     })
 
+    output$card_image_ui <- shiny::renderUI({
+      row <- selected_card()
+      if (is.null(row)) return(shiny::div())
+
+      card <- row[1, , drop = FALSE]
+      pdf_path_val <- card$pdf_path[[1]]
+      page_num_val <- card$page_num[[1]]
+
+      if (is.null(pdf_path_val) || !nzchar(pdf_path_val) || is.null(page_num_val) || is.na(page_num_val)) {
+        return(shiny::p(shiny::em("No PDF reference for this card.")))
+      }
+
+      resolved <- resolve_pdf_path(pdf_path_val, pdf_roots)
+      if (is.null(resolved)) {
+        return(shiny::p(shiny::em(sprintf("PDF not found: %s", basename(pdf_path_val)))))
+      }
+
+      if (!has_pdftools()) {
+        return(shiny::p(shiny::em("Install the 'pdftools' and 'png' packages to view card images.")))
+      }
+
+      tmp_png <- render_pdf_page(resolved, page_num_val)
+      if (is.null(tmp_png)) {
+        return(shiny::p(shiny::em("Could not render PDF page.")))
+      }
+
+      png_data <- base64enc::dataURI(file = tmp_png, mime = "image/png")
+      shiny::tagList(
+        shiny::p(shiny::strong(sprintf("%s, page %s", basename(pdf_path_val), page_num_val))),
+        shiny::tags$img(src = png_data, style = "max-width: 100%; border: 1px solid #ccc;")
+      )
+    })
+
     output$card_detail_ui <- shiny::renderUI({
       row <- selected_card()
       if (is.null(row)) {
@@ -92,22 +128,6 @@ cards_server <- function(id, conn, validation, images_dir = NULL) {
       detail_blocks <- list(
         shiny::h4(sprintf("%s - %s", card$botanical_name[[1]] %||% "Unknown", card$accession_number[[1]] %||% "-"))
       )
-
-      img_tag <- NULL
-      if (!is.null(images_dir) && !is.null(card$image_path[[1]]) && nzchar(card$image_path[[1]])) {
-        img_file <- basename(card$image_path[[1]])
-        img_full <- file.path(images_dir, img_file)
-        if (file.exists(img_full)) {
-          img_tag <- shiny::tags$img(
-            src = paste0("card_images/", img_file),
-            style = "max-width: 100%; border: 1px solid #ccc; margin-bottom: 1em;"
-          )
-        }
-      }
-
-      if (!is.null(img_tag)) {
-        detail_blocks <- c(detail_blocks, list(img_tag))
-      }
 
       if (!is.null(card$pdf_path[[1]]) && nzchar(card$pdf_path[[1]])) {
         detail_blocks <- c(detail_blocks, list(shiny::p(shiny::strong("PDF path:"), shiny::code(card$pdf_path[[1]]))))

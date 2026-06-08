@@ -24,9 +24,13 @@ Open R or RStudio and run:
 ```r
 install.packages(c(
   "shiny", "DBI", "RSQLite", "DT", "dplyr",
-  "stringr", "fs", "bslib", "jsonlite"
+  "stringr", "fs", "bslib", "jsonlite",
+  "pdftools", "base64enc"
 ))
 ```
+
+The last two (`pdftools`, `base64enc`) are optional — needed only for
+displaying card images from PDFs. The app works without them (data only).
 
 ## Launch
 

@@ -207,6 +207,11 @@ build_extractions_query <- function(conn, where_sql = "") {
     if (field_name %in% cols_available) sprintf("e.%s", field_name) else sprintf("NULL AS %s", field_name)
   }, character(1))
 
+  json_cols <- c("parsed_table_json", "parsed_other_sowings_json", "parsed_replicate_json")
+  json_fields <- vapply(json_cols, function(col) {
+    if (col %in% cols_available) sprintf("e.%s", col) else sprintf("NULL AS %s", col)
+  }, character(1))
+
   paste(
     "SELECT",
     "c.id AS card_id,",
@@ -218,10 +223,8 @@ build_extractions_query <- function(conn, where_sql = "") {
     "e.processing_time_s,",
     "e.model,",
     "e.dpi,",
-    paste(select_fields, collapse = ", "),
-    ", e.parsed_table_json,",
-    "e.parsed_other_sowings_json,",
-    "e.parsed_replicate_json,",
+    paste(select_fields, collapse = ", "), ",",
+    paste(json_fields, collapse = ", "), ",",
     "GROUP_CONCAT(a.accession_number, ' | ') AS all_accession_numbers",
     "FROM cards c",
     "LEFT JOIN extractions e ON e.card_id = c.id",
@@ -248,7 +251,8 @@ get_extractions_df <- function(conn, limit = 500L, offset = 0L, search = NULL, s
   }
 
   where_sql <- if (length(where_clauses) > 0) paste("WHERE", paste(where_clauses, collapse = " AND ")) else ""
-  DBI::dbGetQuery(conn, build_extractions_query(conn, where_sql), params = c(params, list(as.integer(limit), as.integer(offset))))
+  all_params <- c(params, list(as.integer(limit), as.integer(offset)))
+  DBI::dbGetQuery(conn, build_extractions_query(conn, where_sql), params = all_params)
 }
 
 get_card_count <- function(conn, status_filter = NULL, search = NULL) {
@@ -266,11 +270,12 @@ get_card_count <- function(conn, status_filter = NULL, search = NULL) {
   }
 
   where_sql <- if (length(where_clauses) > 0) paste("WHERE", paste(where_clauses, collapse = " AND ")) else ""
-  DBI::dbGetQuery(
-    conn,
-    paste("SELECT count(DISTINCT c.id) AS n FROM cards c LEFT JOIN extractions e ON e.card_id = c.id", where_sql),
-    params = params
-  )$n[[1]]
+  sql <- paste("SELECT count(DISTINCT c.id) AS n FROM cards c LEFT JOIN extractions e ON e.card_id = c.id", where_sql)
+  if (length(params) > 0) {
+    DBI::dbGetQuery(conn, sql, params = params)$n[[1]]
+  } else {
+    DBI::dbGetQuery(conn, sql)$n[[1]]
+  }
 }
 
 is_readonly_select <- function(sql) {

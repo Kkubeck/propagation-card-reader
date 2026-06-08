@@ -36,6 +36,8 @@ LEXICON_CATEGORIES: Dict[str, Sequence[str]] = {
         "sown",
         "sowing",
         "sowings",
+        "resown",
+        "resowed",
         "surface sow",
         "surfacesow",
         "direct sow",
@@ -48,24 +50,32 @@ LEXICON_CATEGORIES: Dict[str, Sequence[str]] = {
         "emerged",
         "prick",
         "pricked",
+        "unpricked",
         "pricked out",
         "potted",
+        "repotted",
         "potting",
         "transplant",
         "transplanted",
         "planted",
         "moved",
+        "remove",
         "removed",
         "discarded",
+        "terminated",
+        "termination",
         "eliminated",
         "failed",
         "dead",
+        "ungerminated",
         "soak",
         "soaked",
         "rooted",
+        "unrooted",
         "rooting",
         "scarify",
         "scarified",
+        "scarification",
         "stratification",
         "cover",
         "covered",
@@ -75,6 +85,7 @@ LEXICON_CATEGORIES: Dict[str, Sequence[str]] = {
         "divided",
         "stick",
         "stuck",
+        "direct stuck",
         "double stuck",
         "treated",
         "repeated",
@@ -87,6 +98,14 @@ LEXICON_CATEGORIES: Dict[str, Sequence[str]] = {
         "kept",
         "removed from",
         "moved to",
+        "chip",
+        "crack",
+        "crush",
+        "freeze",
+        "hydrate",
+        "inoculate",
+        "mash",
+        "dewinged",
     ],
     "locations": [
         "greenhouse",
@@ -356,34 +375,35 @@ EXPLICIT_REPLACEMENTS: Dict[str, str] = {
     "gerrn": "germ",
     "gern": "germ",
     "herm": "germ",
+    "jerm": "germ",
+    "jerns": "germ",
+    "down": "sown",
     "soon": "sown",
+    "suddling": "seedling",
+    "suddlings": "seedlings",
+    "seediing": "seedling",
+    "seediings": "seedlings",
     "prickled": "pricked",
     "pickled": "pricked",
+    "dull": "full",
     "osmosote": "osmocote",
     "osmocotee": "osmocote",
     "nutricole": "nutricote",
+    "periite": "perlite",
+    "vermicuiite": "vermiculite",
     "coldfrarne": "coldframe",
     "coldfrarne.": "coldframe",
     "glasthouse": "glasshouse",
     "shadehause": "shadehouse",
-    "seediing": "seedling",
-    "seediings": "seedlings",
     "buibs": "bulbs",
     "offsefs": "offsets",
     "scionss": "scions",
-    "periite": "perlite",
-    "vermicuiite": "vermiculite",
-    "gibberellic": "gibberellic",
 }
 
 PHRASE_CORRECTION_RULES: Sequence[Tuple[str, str]] = [
     ("prickled out", "pricked out"),
     ("picked out", "pricked out"),
-    ("germs", "germ"),
-    ("cold strat", "cold stratification"),
-    ("warm strat", "warm stratification"),
     ("surfacesow", "surface sow"),
-    ("tip cutts", "tip cuttings"),
     ("seediings", "seedlings"),
 ]
 
@@ -453,6 +473,13 @@ DATE_RE = (
     r")" % (MONTH_RE, MONTH_RE, MONTH_RE)
 )
 LOCATION_RE = r"(?:GREENHOUSE(?:\s+\d+)?|GLASSHOUSE|COLD\s*FRAME|COLDFRAME|SHADEHOUSE|POLY\s+SHADEHOUSE|POLYHOUSE|PHN|PHS|PSH|GH|PH|ALPINE\s+HOUSE|MIST\s+BENCH|PROPAGATION\s+BENCH|NURSERY)"
+
+CONTEXTUAL_OCR_FIXES: Sequence[Tuple[re.Pattern[str], str]] = [
+    (re.compile(r"\bDorm\.?\s", re.IGNORECASE), "Germ. "),
+    (re.compile(r"\b50WN\b"), "SOWN"),
+    (re.compile(r"\bS0WN\b", re.IGNORECASE), "SOWN"),
+]
+
 
 CARD_PHRASE_PATTERNS: Dict[str, re.Pattern[str]] = {
     "sown_location_date": re.compile(rf"\bSOWN\b\s*(?:-|:)?\s*(?P<location>{LOCATION_RE})\s+(?P<date>{DATE_RE})", re.IGNORECASE),
@@ -777,6 +804,17 @@ def _apply_phrase_normalizations(text: str) -> str:
     return result
 
 
+def _apply_contextual_fixes(text: str) -> Tuple[str, int]:
+    result = text
+    count = 0
+    for pattern, replacement in CONTEXTUAL_OCR_FIXES:
+        new_result = pattern.sub(replacement, result)
+        if new_result != result:
+            count += 1
+            result = new_result
+    return result, count
+
+
 def _correct_text_with_stats(text: str) -> CorrectionDetail:
     if not text:
         return CorrectionDetail(original=text, corrected=text, replacements=0)
@@ -784,8 +822,9 @@ def _correct_text_with_stats(text: str) -> CorrectionDetail:
     if _looks_like_botanical_name_text(text.strip()):
         return CorrectionDetail(original=text, corrected=text, replacements=0)
 
-    normalized_text = _apply_phrase_normalizations(text)
-    phrase_replacements = 0 if normalized_text == text else 1
+    context_text, context_count = _apply_contextual_fixes(text)
+    normalized_text = _apply_phrase_normalizations(context_text)
+    phrase_replacements = context_count + (0 if normalized_text == context_text else 1)
 
     pieces = TOKEN_RE.findall(normalized_text)
     replacements = phrase_replacements

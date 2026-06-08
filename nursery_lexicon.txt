@@ -10,6 +10,8 @@ sow
 sown
 sowing
 sowings
+resown
+resowed
 surface sow
 surfacesow
 direct sow
@@ -17,27 +19,35 @@ G.
 germ
 germs
 germination
+germinations
 germinate
 germinated
 emergent
 emerged
 prick
 pricked
+unpricked
 pricked out
 potted
+repotted
 potting
 transplant
 transplanted
 planted
 moved
+remove
 removed
 discarded
+terminated
+termination
 eliminated
 failed
 dead
+ungerminated
 soak
 soaked
 rooted
+unrooted
 rooting
 scarify
 scarified
@@ -51,8 +61,10 @@ divide
 divided
 stick
 stuck
+direct stuck
 double stuck
 treated
+repeat
 repeated
 punched
 dip
@@ -63,6 +75,14 @@ keep
 kept
 removed from
 moved to
+chip
+crack
+crush
+freeze
+hydrate
+inoculate
+mash
+dewinged
 
 ## Locations
 greenhouse
@@ -71,8 +91,10 @@ greenhouse 2
 glasshouse
 glass house
 coldframe
+coldframes
 cold frame
 frame
+frames
 shadehouse
 poly shadehouse
 polyhouse
@@ -86,8 +108,11 @@ mist bench
 propagation bench
 bench
 mist
+moist
 fridge
+freezer
 inside
+indoor
 indoors
 outside
 outdoors
@@ -115,6 +140,7 @@ alpine mix
 seedling mix
 alpine media
 alpine medium
+cutting media
 media
 medium
 mix
@@ -123,27 +149,41 @@ grit
 granite grit
 sphagnum
 moss
+milled sphagnum
 aqua
 water
 physan
 powder
 nutrient
+nutrients
 rate
 soil
+sandy
 compost
 bark
 pumice
 charcoal
 vispor
+jiffy
+pellet
+polyethylene
+glycol
+primer
+smoke primer
+peroxide
+activated charcoal
 ## Plant Parts
 seed
 seeds
 seedling
 seedlings
+sdlgs
 cutting
 cuttings
+cutts
 tip cutting
 tip cuttings
+tip cutts
 tip
 tips
 scion
@@ -156,12 +196,14 @@ rhizome
 rhizomes
 tuber
 tubers
+tuberous
 rootstock
 rootstocks
 propagule
 propagules
 radicle
 radicles
+prothalli
 foliage
 leaf
 leaves
@@ -179,6 +221,14 @@ shoot
 shoots
 plant
 plants
+samara
+samaras
+pericarp
+pericarps
+chaff
+pulp
+section
+sections
 
 ## Conditions & Treatments
 cold stratification
@@ -187,10 +237,13 @@ cold strat
 warm strat
 cold stock
 cold winter
+double dormancy
 dormancy
 dormant
 scarify
 scarification
+mechanical scarification
+acid scarification
 ga3
 gibberellic acid
 bottom heat
@@ -200,8 +253,11 @@ lightly
 cover lightly
 warm water
 cool to germ
+cool to germinate
+warm to germinate
 soak
 soaked
+overnight
 fridge
 mist
 standard
@@ -214,6 +270,13 @@ spring
 dorm
 treatment
 treatments
+disinfection
+dissinfection
+osmopriming
+fluctuating
+hormone
+stim root
+stim-root
 
 ## Abbreviations
 sdg

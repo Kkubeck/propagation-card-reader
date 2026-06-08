@@ -4,22 +4,53 @@ Streamlit app for browsing extraction databases.
 Launch: streamlit run db_viewer.py --server.port 8502
 """
 
-import glob
+import io
 import os
+import re
 import sqlite3
 from pathlib import Path
 
 import pandas as pd
 import streamlit as st
 
+try:
+    import pymupdf as fitz
+except ImportError:
+    try:
+        import fitz
+    except ImportError:
+        fitz = None
+
 # --- Config ---
-SCAN_PATHS = [
-    "/media/hevek/DeweyRunner",
-    "/media/hevek/LACIE SHARE",
-    "/media/hevek/LaCie",
-    "/home/hevek/projects/propagation-card-reader",
-    os.path.expanduser("~"),
+import glob as _glob
+
+def _build_known_paths() -> list[str]:
+    """Known DB paths + any cards*.db variants in ~/Desktop/inventory/."""
+    explicit = [
+        os.path.join(os.path.expanduser("~"), "Desktop", "inventory", "cards.db"),
+        os.path.join(os.path.dirname(__file__), "cards.db"),
+        "/media/hevek/DeweyRunner/cards.db",
+    ]
+    inventory_dir = os.path.join(os.path.expanduser("~"), "Desktop", "inventory")
+    variants = _glob.glob(os.path.join(inventory_dir, "cards*.db"))
+    seen = set()
+    result = []
+    for p in explicit + sorted(variants):
+        rp = os.path.realpath(p)
+        if rp not in seen:
+            seen.add(rp)
+            result.append(p)
+    return result
+
+KNOWN_DB_PATHS = _build_known_paths()
+
+PDF_SOURCE_ROOTS = [
+    "/media/hevek/LACIE SHARE/propagation_card_ocr/OCR_test",
+    "/media/hevek/DeweyRunner/OCR_test",
+    "/Volumes/DeweyRunner/OCR_test",
 ]
+
+MAC_PDF_PREFIX = "/Volumes/DeweyRunner/OCR_test/"
 
 EXTRACTION_FIELDS = [
     "botanical_name", "family", "geocode", "received_as", "quantity",
@@ -41,31 +72,39 @@ FIELD_GROUPS = {
 }
 
 
-def find_databases() -> list[str]:
-    """Scan known paths for .db files."""
-    found = set()
-    for base in SCAN_PATHS:
-        if not os.path.exists(base):
+_ID_SEARCH_RE = re.compile(r'^id\s*=\s*(\d+)$', re.IGNORECASE)
+
+
+def _apply_search_filter(search: str, where_clauses: list, params: list):
+    """Add search filtering — supports 'id=NNN' for direct card lookup."""
+    m = _ID_SEARCH_RE.match(search.strip())
+    if m:
+        where_clauses.append("c.id = ?")
+        params.append(int(m.group(1)))
+    else:
+        where_clauses.append(
+            "(e.botanical_name LIKE ? OR e.propagation_text LIKE ? OR e.accession_number LIKE ?)"
+        )
+        params.extend([f"%{search}%"] * 3)
+
+
+def find_databases(paths: list[str] | None = None) -> list[str]:
+    """Return known DB paths that exist and contain the expected tables."""
+    found = []
+    for path in (paths or KNOWN_DB_PATHS):
+        if not os.path.isfile(path):
             continue
-        for root, dirs, files in os.walk(base):
-            # Limit depth to 3 levels
-            depth = root.replace(base, "").count(os.sep)
-            if depth > 3:
-                dirs.clear()
-                continue
-            for f in files:
-                if f.endswith(".db") and not f.endswith("-shm") and not f.endswith("-wal"):
-                    full = os.path.join(root, f)
-                    # Quick check: is it a card reader DB?
-                    try:
-                        conn = sqlite3.connect(full)
-                        tables = {r[0] for r in conn.execute("SELECT name FROM sqlite_master WHERE type='table'").fetchall()}
-                        conn.close()
-                        if "cards" in tables and "extractions" in tables:
-                            found.add(full)
-                    except Exception:
-                        pass
-    return sorted(found)
+        try:
+            conn = sqlite3.connect(f"file:{path}?mode=ro", uri=True)
+            tables = {r[0] for r in conn.execute(
+                "SELECT name FROM sqlite_master WHERE type='table'"
+            ).fetchall()}
+            conn.close()
+            if "cards" in tables and "extractions" in tables:
+                found.append(path)
+        except Exception:
+            pass
+    return found
 
 
 def get_connection(db_path: str) -> sqlite3.Connection:
@@ -121,10 +160,7 @@ def get_extractions_df(conn: sqlite3.Connection, limit: int = 500, offset: int =
         params.append(status_filter)
 
     if search:
-        where_clauses.append(
-            "(e.botanical_name LIKE ? OR e.propagation_text LIKE ? OR e.accession_number LIKE ?)"
-        )
-        params.extend([f"%{search}%"] * 3)
+        _apply_search_filter(search, where_clauses, params)
 
     where_sql = f"WHERE {' AND '.join(where_clauses)}" if where_clauses else ""
 
@@ -140,6 +176,9 @@ def get_extractions_df(conn: sqlite3.Connection, limit: int = 500, offset: int =
             e.model,
             e.dpi,
             {ext_select},
+            e.parsed_table_json,
+            e.parsed_other_sowings_json,
+            e.parsed_replicate_json,
             GROUP_CONCAT(a.accession_number, ' | ') as all_accession_numbers
         FROM cards c
         LEFT JOIN extractions e ON e.card_id = c.id
@@ -163,10 +202,7 @@ def get_card_count(conn: sqlite3.Connection, status_filter: str = None, search: 
         where_clauses.append("c.status = ?")
         params.append(status_filter)
     if search:
-        where_clauses.append(
-            "(e.botanical_name LIKE ? OR e.propagation_text LIKE ? OR e.accession_number LIKE ?)"
-        )
-        params.extend([f"%{search}%"] * 3)
+        _apply_search_filter(search, where_clauses, params)
     where_sql = f"WHERE {' AND '.join(where_clauses)}" if where_clauses else ""
     query = f"""
         SELECT count(DISTINCT c.id) FROM cards c
@@ -174,6 +210,40 @@ def get_card_count(conn: sqlite3.Connection, status_filter: str = None, search: 
         {where_sql}
     """
     return conn.execute(query, params).fetchone()[0]
+
+
+def _resolve_pdf_path(db_pdf_path: str) -> str | None:
+    """Map a DB-stored PDF path to a local path that exists."""
+    if os.path.isfile(db_pdf_path):
+        return db_pdf_path
+    filename = os.path.basename(db_pdf_path)
+    for root in PDF_SOURCE_ROOTS:
+        candidate = os.path.join(root, filename)
+        if os.path.isfile(candidate):
+            return candidate
+    return None
+
+
+@st.cache_data(ttl=300, max_entries=50)
+def render_card_image(pdf_path: str, page_num: int, dpi: int = 150) -> bytes | None:
+    """Render a single PDF page to PNG bytes."""
+    if fitz is None:
+        return None
+    resolved = _resolve_pdf_path(pdf_path)
+    if not resolved:
+        return None
+    try:
+        doc = fitz.open(resolved)
+        if page_num < 0 or page_num >= len(doc):
+            doc.close()
+            return None
+        page = doc[page_num]
+        pix = page.get_pixmap(dpi=dpi)
+        png_bytes = pix.tobytes("png")
+        doc.close()
+        return png_bytes
+    except Exception:
+        return None
 
 
 # --- Streamlit App ---
@@ -191,16 +261,15 @@ st.title("🌿 Propagation Card Reader — DB Viewer")
 with st.sidebar:
     st.header("📂 Database")
 
-    # Find databases
-    if "db_list" not in st.session_state or st.sidebar.button("🔄 Rescan"):
-        with st.spinner("Scanning for databases..."):
-            st.session_state.db_list = find_databases()
+    # Find databases (rebuild known paths each refresh to catch new files)
+    if "db_list" not in st.session_state or st.sidebar.button("🔄 Refresh"):
+        st.session_state.db_list = find_databases(_build_known_paths())
 
     db_list = st.session_state.get("db_list", [])
 
     if not db_list:
-        st.warning("No card reader databases found.")
-        st.info(f"Scanning: {', '.join(SCAN_PATHS)}")
+        st.warning("No card reader databases found at known paths.")
+        st.info("Enter a path manually below, or add paths to KNOWN_DB_PATHS in db_viewer.py")
         st.stop()
 
     # Display as short names with full path in tooltip
@@ -211,8 +280,12 @@ with st.sidebar:
 
     # Manual path entry
     custom_path = st.text_input("Or enter path manually")
-    if custom_path and os.path.exists(custom_path):
-        db_path = custom_path
+    if custom_path:
+        expanded = os.path.expanduser(custom_path.strip())
+        if os.path.isfile(expanded):
+            db_path = expanded
+        else:
+            st.warning(f"Not found: {expanded}")
 
     st.caption(f"📍 `{db_path}`")
     st.caption(f"📏 {os.path.getsize(db_path) / 1024:.0f} KB")
@@ -273,59 +346,117 @@ with tab_cards:
     if df.empty:
         st.info("No cards match the current filters.")
     else:
-        # Card detail view
-        view_mode = st.radio("View", ["📋 Table", "🃏 Card Detail"], horizontal=True, key="view_mode")
+        # Table with row selection
+        display_cols = ["card_id", "status", "accession_number", "botanical_name",
+                      "family", "received_as", "date_received", "all_accession_numbers",
+                      "processing_time_s"]
+        available_cols = [c for c in display_cols if c in df.columns]
 
-        if view_mode == "📋 Table":
-            # Show compact table
-            display_cols = ["card_id", "status", "error_message", "accession_number", "botanical_name",
-                          "family", "received_as", "date_received", "all_accession_numbers",
-                          "processing_time_s"]
-            available_cols = [c for c in display_cols if c in df.columns]
-            st.dataframe(df[available_cols], use_container_width=True, hide_index=True)
+        event = st.dataframe(
+            df[available_cols],
+            use_container_width=True,
+            hide_index=True,
+            on_select="rerun",
+            selection_mode="single-row",
+            key=f"card_table_{page}",
+        )
 
-        else:
-            # Card-by-card detail view
-            for _, row in df.iterrows():
-                if row.get("status") != "success":
-                    continue
+        # Card detail for selected row
+        selected_rows = event.selection.rows if event.selection else []
+        if selected_rows:
+            row = df.iloc[selected_rows[0]]
 
-                card_title = row.get("botanical_name") or "Unknown"
-                acc = row.get("accession_number") or "—"
-                with st.expander(f"**{card_title}** — `{acc}`", expanded=False):
-                    for group_name, fields in FIELD_GROUPS.items():
-                        populated = {f: row.get(f) for f in fields
-                                    if row.get(f) is not None and str(row.get(f)).strip()}
-                        if not populated:
-                            continue
-                        st.markdown(f"**{group_name}**")
-                        for fname, val in populated.items():
-                            if fname == "propagation_text":
-                                st.text_area(
-                                    "Propagation Text",
-                                    value=str(val),
-                                    height=150,
-                                    disabled=True,
-                                    key=f"prop_{row['card_id']}",
+            st.divider()
+            card_title = row.get("botanical_name") or "Unknown"
+            acc = row.get("accession_number") or "—"
+            st.subheader(f"{card_title} — `{acc}`")
+
+            img_col, detail_col = st.columns([1, 1])
+
+            with img_col:
+                pdf_path = row.get("pdf_path") or ""
+                page_num = row.get("page_num")
+                if pdf_path and page_num is not None:
+                    png = render_card_image(pdf_path, int(page_num))
+                    if png:
+                        st.image(png, use_container_width=True,
+                                 caption=f"{os.path.basename(pdf_path)}, page {page_num}")
+                        rotate = st.selectbox(
+                            "Rotate", [0, 90, 180, 270], key=f"rot_{row['card_id']}",
+                            label_visibility="collapsed",
+                            format_func=lambda d: f"↻ Rotate {d}°" if d else "No rotation",
+                        )
+                        if rotate:
+                            from PIL import Image
+                            img = Image.open(io.BytesIO(png))
+                            img = img.rotate(-rotate, expand=True)
+                            buf = io.BytesIO()
+                            img.save(buf, format="PNG")
+                            st.image(buf.getvalue(), use_container_width=True,
+                                     caption=f"Rotated {rotate}°")
+                    else:
+                        resolved = _resolve_pdf_path(pdf_path)
+                        if resolved is None:
+                            st.info(f"PDF not found: {os.path.basename(pdf_path)}")
+                        else:
+                            st.info("Could not render page.")
+                else:
+                    st.info("No PDF reference for this card.")
+
+            with detail_col:
+                for group_name, fields in FIELD_GROUPS.items():
+                    populated = {f: row.get(f) for f in fields
+                                if row.get(f) is not None and str(row.get(f)).strip()}
+                    if not populated:
+                        continue
+                    st.markdown(f"**{group_name}**")
+                    for fname, val in populated.items():
+                        if fname == "propagation_text":
+                            st.text_area(
+                                "Propagation Text",
+                                value=str(val),
+                                height=150,
+                                disabled=True,
+                                key=f"prop_{row['card_id']}",
+                            )
+                        elif fname == "iris_data_entered":
+                            st.write(f"  `{fname}`: {'✅' if val else '❌'}")
+                        else:
+                            st.write(f"  `{fname}`: {val}")
+
+                all_acc = row.get("all_accession_numbers")
+                if all_acc:
+                    st.markdown("**🔢 All Accession Numbers**")
+                    st.write(f"  {all_acc}")
+
+                # Parsed structured data
+                import json as _json
+                for json_col, label in [
+                    ("parsed_table_json", "📋 Back-Card Table"),
+                    ("parsed_other_sowings_json", "🌱 Other Sowings"),
+                    ("parsed_replicate_json", "🔬 Replicates"),
+                ]:
+                    raw = row.get(json_col)
+                    if raw and str(raw).strip():
+                        try:
+                            parsed = _json.loads(raw)
+                            items = parsed.get("rows") or parsed.get("records") or parsed.get("replicates") or []
+                            if items:
+                                st.markdown(f"**{label}** ({len(items)} entries)")
+                                st.dataframe(
+                                    pd.DataFrame(items),
+                                    use_container_width=True,
+                                    hide_index=True,
+                                    key=f"{json_col}_{row['card_id']}",
                                 )
-                            elif fname == "iris_data_entered":
-                                st.write(f"  `{fname}`: {'✅' if val else '❌'}")
-                            else:
-                                st.write(f"  `{fname}`: {val}")
+                        except Exception:
+                            pass
 
-                    # All accession numbers
-                    all_acc = row.get("all_accession_numbers")
-                    if all_acc:
-                        st.markdown("**🔢 All Accession Numbers**")
-                        st.write(f"  {all_acc}")
-
-                    # Meta
-                    st.markdown("**⚙️ Processing**")
-                    time_s = row.get("processing_time_s")
-                    st.write(f"  Model: `{row.get('model')}` | DPI: {row.get('dpi')} | Time: {time_s:.1f}s" if time_s else "  —")
-
-                    pdf_name = os.path.basename(row["pdf_path"]) if row.get("pdf_path") else "—"
-                    st.caption(f"PDF: {pdf_name}, page {row.get('page_num')}")
+                st.markdown("**⚙️ Processing**")
+                time_s = row.get("processing_time_s")
+                st.write(f"  Model: `{row.get('model')}` | DPI: {row.get('dpi')} | Time: {time_s:.1f}s" if time_s else "  —")
+        else:
+            st.caption("Click a row above to see card details.")
 
 # --- Tab 2: Field Coverage ---
 with tab_coverage:

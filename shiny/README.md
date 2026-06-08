@@ -4,7 +4,7 @@ Read-only R Shiny replacement for the Python Streamlit propagation card database
 
 ## Requirements
 
-- macOS with R installed
+- R 4.1+ (Windows, macOS, or Linux)
 - SQLite database file such as `cards.db`
 - R packages:
   - `shiny`

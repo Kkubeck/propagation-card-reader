@@ -229,6 +229,7 @@ def cmd_export(args):
         "source_info", "collector_number", "other_number", "labels_requested",
         "max_quantity", "parent_accession", "collection_info", "distribution",
         "accession_number", "propagation_text", "curators_info", "iris_data_entered",
+        "parsed_replicate_json", "parsed_other_sowings_json",
     ]
     ext_select = ", ".join(f"e.{f}" for f in ext_fields)
 
@@ -338,6 +339,290 @@ def cmd_failures(args):
     conn.close()
 
 
+def cmd_duplex(args):
+    """Manage duplex card processing — show status, enable, or migrate."""
+    db_path = args.db
+    if not os.path.exists(db_path):
+        print(f"No database found at {db_path}")
+        return
+
+    from schema_migrations import migrate
+    migrate(db_path)
+
+    from inventory import assign_duplex_pairing
+    assign_duplex_pairing(db_path)
+
+    conn = get_db(db_path)
+
+    if args.enable:
+        updated = conn.execute(
+            """UPDATE cards SET status = 'pending', excluded_reason = NULL
+               WHERE duplex_flag = 1 AND status = 'excluded'
+               AND card_face IS NOT NULL AND pair_id IS NOT NULL"""
+        ).rowcount
+        conn.commit()
+        print(f"Enabled {updated} paired duplex cards for processing.")
+
+    total = conn.execute("SELECT COUNT(*) FROM cards WHERE duplex_flag = 1").fetchone()[0]
+    paired = conn.execute(
+        "SELECT COUNT(*) FROM cards WHERE duplex_flag = 1 AND card_face IS NOT NULL"
+    ).fetchone()[0]
+    unpaired = conn.execute(
+        "SELECT COUNT(*) FROM cards WHERE duplex_flag = 1 AND card_face IS NULL"
+    ).fetchone()[0]
+    fronts_pending = conn.execute(
+        "SELECT COUNT(*) FROM cards WHERE duplex_flag = 1 AND card_face = 'front' AND status = 'pending'"
+    ).fetchone()[0]
+    backs_pending = conn.execute(
+        "SELECT COUNT(*) FROM cards WHERE duplex_flag = 1 AND card_face = 'back' AND status = 'pending'"
+    ).fetchone()[0]
+    excluded = conn.execute(
+        "SELECT COUNT(*) FROM cards WHERE duplex_flag = 1 AND status = 'excluded'"
+    ).fetchone()[0]
+    processed = conn.execute(
+        "SELECT COUNT(*) FROM cards WHERE duplex_flag = 1 AND status = 'success'"
+    ).fetchone()[0]
+
+    print(f"\n--- Duplex Card Status ---")
+    print(f"Total duplex pages:  {total}")
+    print(f"  Paired:            {paired} ({paired // 2} front/back pairs)")
+    print(f"  Unpaired:          {unpaired}")
+    print(f"  Fronts pending:    {fronts_pending}")
+    print(f"  Backs pending:     {backs_pending}")
+    print(f"  Excluded:          {excluded}")
+    print(f"  Processed:         {processed}")
+
+    conn.close()
+
+
+def cmd_other_sowings(args):
+    """Detect and backfill OTHER SOWINGS table data from front-card propagation text."""
+    import json
+    from other_sowings_parser import has_other_sowings, parse_other_sowings
+
+    db_path = args.db
+    if not os.path.exists(db_path):
+        print(f"No database found at {db_path}")
+        return
+
+    migrate(db_path)
+    conn = get_db(db_path)
+
+    rows = conn.execute("""
+        SELECT e.id, e.propagation_text, e.botanical_name, e.parsed_other_sowings_json,
+               c.pdf_path, c.page_num
+        FROM extractions e JOIN cards c ON c.id = e.card_id
+        WHERE c.status = 'success' AND e.propagation_text IS NOT NULL
+    """).fetchall()
+
+    detected = []
+    total_records = 0
+    for row in rows:
+        if has_other_sowings(row["propagation_text"]):
+            result = parse_other_sowings(row["propagation_text"])
+            if result.records:
+                detected.append((row, result))
+                total_records += len(result.records)
+
+    already = sum(1 for row, _ in detected if row["parsed_other_sowings_json"])
+    pending = sum(1 for row, _ in detected if not row["parsed_other_sowings_json"])
+
+    print(f"\n--- OTHER SOWINGS Tables ---")
+    print(f"Total processed:          {len(rows)}")
+    print(f"Cards with OTHER table:   {len(detected)}")
+    print(f"Total sowing records:     {total_records}")
+    print(f"  Already stored:         {already}")
+    print(f"  Pending backfill:       {pending}")
+
+    if args.verbose:
+        for row, result in detected:
+            pdf = os.path.basename(row["pdf_path"]) if row["pdf_path"] else "?"
+            stored = "stored" if row["parsed_other_sowings_json"] else "NEW"
+            print(f"\n  [{stored}] id={row['id']} | {pdf} p{row['page_num']} | {row['botanical_name']}")
+            print(f"    Format: {result.format}, {len(result.records)} records")
+            for rec in result.records:
+                parts = []
+                if rec.accession: parts.append(f"acc={rec.accession}")
+                if rec.date_sown: parts.append(f"sow={rec.date_sown}")
+                if rec.location: parts.append(f"loc={rec.location}")
+                if rec.date_germ: parts.append(f"germ={rec.date_germ}")
+                if rec.qty_germ: parts.append(f"qty_g={rec.qty_germ}")
+                if rec.outcome: parts.append(f"outcome={rec.outcome}")
+                print(f"      {', '.join(parts)}")
+
+    if args.backfill and pending > 0:
+        updated = 0
+        for row, result in detected:
+            if not row["parsed_other_sowings_json"]:
+                conn.execute(
+                    "UPDATE extractions SET parsed_other_sowings_json = ? WHERE id = ?",
+                    (json.dumps(result.to_dict()), row["id"]),
+                )
+                updated += 1
+        conn.commit()
+        print(f"\nBackfilled {updated} cards with OTHER SOWINGS JSON.")
+
+    conn.close()
+
+
+def cmd_tables(args):
+    """Detect and backfill card-back multi-sowing table data into parsed_table_json."""
+    import json
+    from table_parser import parse_table_text
+
+    db_path = args.db
+    if not os.path.exists(db_path):
+        print(f"No database found at {db_path}")
+        return
+
+    migrate(db_path)
+    conn = get_db(db_path)
+
+    rows = conn.execute("""
+        SELECT e.id, e.propagation_text, e.botanical_name, e.parsed_table_json,
+               e.notes, c.pdf_path, c.page_num, c.id as card_id
+        FROM extractions e JOIN cards c ON c.id = e.card_id
+        WHERE c.status = 'success'
+          AND e.notes LIKE '%back_mode=table_continuation%'
+          AND e.propagation_text IS NOT NULL
+    """).fetchall()
+
+    detected = []
+    total_table_rows = 0
+    for row in rows:
+        result = parse_table_text(row["propagation_text"])
+        if result.rows:
+            detected.append((row, result))
+            total_table_rows += len(result.rows)
+
+    already = sum(1 for row, _ in detected if row["parsed_table_json"])
+    pending = sum(1 for row, _ in detected if not row["parsed_table_json"])
+
+    print(f"\n--- Card-Back Multi-Sowing Tables ---")
+    print(f"Table-continuation backs:  {len(rows)}")
+    print(f"Cards with parsed rows:    {len(detected)}")
+    print(f"Total table rows:          {total_table_rows}")
+    print(f"  Already stored:          {already}")
+    print(f"  Pending backfill:        {pending}")
+
+    if args.verbose:
+        for row, result in detected:
+            pdf = os.path.basename(row["pdf_path"]) if row["pdf_path"] else "?"
+            stored = "stored" if row["parsed_table_json"] else "NEW"
+            print(f"\n  [{stored}] card_id={row['card_id']} | {pdf} p{row['page_num']} | {row['botanical_name'] or '?'}")
+            print(f"    Format: {result.format}, {len(result.rows)} rows")
+            for tr in result.rows:
+                parts = []
+                if tr.accession: parts.append(f"acc={tr.accession}")
+                if tr.qty_sown: parts.append(f"qty={tr.qty_sown}")
+                if tr.date_sown: parts.append(f"sow={tr.date_sown}")
+                if tr.treatment: parts.append(f"trt={tr.treatment}")
+                if tr.date_germ: parts.append(f"germ={tr.date_germ}")
+                if tr.qty_germ: parts.append(f"qty_g={tr.qty_germ}")
+                if tr.location: parts.append(f"loc={tr.location}")
+                print(f"      {', '.join(parts)}")
+
+    if args.backfill and pending > 0:
+        updated = 0
+        for row, result in detected:
+            if not row["parsed_table_json"]:
+                conn.execute(
+                    "UPDATE extractions SET parsed_table_json = ? WHERE id = ?",
+                    (json.dumps(result.to_dict()), row["id"]),
+                )
+                updated += 1
+        conn.commit()
+        print(f"\nBackfilled {updated} cards with table JSON.")
+
+    conn.close()
+
+
+def cmd_normalize(args):
+    """Normalize extraction fields: family, received_as, wanted_for_area, dates.
+
+    Run on a COPY of the original DB — this modifies the database in-place.
+    All normalizations are idempotent (safe to run multiple times).
+    """
+    from normalizer import normalize_all
+
+    db_path = args.db
+    if not os.path.exists(db_path):
+        print(f"No database found at {db_path}")
+        return
+
+    migrate(db_path)
+    conn = get_db(db_path)
+
+    verbose = getattr(args, "verbose", False)
+    print(f"Normalizing {db_path}...")
+    results = normalize_all(conn, verbose=verbose)
+
+    total_changes = sum(v for v in results.values())
+    print(f"\nTotal changes: {total_changes}")
+
+    conn.close()
+
+
+def cmd_replicates(args):
+    """Detect multi-replicate cards and optionally backfill parsed_replicate_json."""
+    import json
+    from replicate_parser import is_multi_replicate, parse_replicates
+
+    db_path = args.db
+    if not os.path.exists(db_path):
+        print(f"No database found at {db_path}")
+        return
+
+    migrate(db_path)
+    conn = get_db(db_path)
+
+    rows = conn.execute("""
+        SELECT e.id, e.propagation_text, e.botanical_name, e.parsed_replicate_json,
+               c.pdf_path, c.page_num
+        FROM extractions e JOIN cards c ON c.id = e.card_id
+        WHERE c.status = 'success' AND e.propagation_text IS NOT NULL
+    """).fetchall()
+
+    detected = []
+    for row in rows:
+        if is_multi_replicate(row["propagation_text"]):
+            result = parse_replicates(row["propagation_text"])
+            if result.replicates:
+                detected.append((row, result))
+
+    already = sum(1 for row, _ in detected if row["parsed_replicate_json"])
+    pending = sum(1 for row, _ in detected if not row["parsed_replicate_json"])
+
+    print(f"\n--- Multi-Replicate Cards ---")
+    print(f"Total processed:        {len(rows)}")
+    print(f"Multi-replicate found:  {len(detected)}")
+    print(f"  Already stored:       {already}")
+    print(f"  Pending backfill:     {pending}")
+
+    for row, result in detected:
+        pdf = os.path.basename(row["pdf_path"]) if row["pdf_path"] else "?"
+        reps = result.replicates
+        stored = "stored" if row["parsed_replicate_json"] else "NEW"
+        print(f"\n  [{stored}] id={row['id']} | {pdf} p{row['page_num']} | {row['botanical_name']}")
+        print(f"    Format: {result.format}, {len(reps)} replicates")
+        for rep in reps:
+            print(f"    #{rep.replicate_id}: loc={rep.location}, trt={rep.treatment}")
+
+    if args.backfill and pending > 0:
+        updated = 0
+        for row, result in detected:
+            if not row["parsed_replicate_json"]:
+                conn.execute(
+                    "UPDATE extractions SET parsed_replicate_json = ? WHERE id = ?",
+                    (json.dumps(result.to_dict()), row["id"]),
+                )
+                updated += 1
+        conn.commit()
+        print(f"\nBackfilled {updated} cards with replicate JSON.")
+
+    conn.close()
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Propagation Card Reader — Local Vision LLM OCR"
@@ -371,6 +656,28 @@ def main():
     fail = sub.add_parser("failures", parents=[common], help="Show/retry failed cards")
     fail.add_argument("--retry", action="store_true", help="Reset failed cards back to pending")
     fail.set_defaults(func=cmd_failures)
+
+    dup = sub.add_parser("duplex", parents=[common], help="Manage duplex (front/back) card processing")
+    dup.add_argument("--enable", action="store_true", help="Un-exclude paired duplex cards for processing")
+    dup.set_defaults(func=cmd_duplex)
+
+    rep = sub.add_parser("replicates", parents=[common], help="Detect and show multi-replicate cards")
+    rep.add_argument("--backfill", action="store_true", help="Parse existing cards and store replicate JSON")
+    rep.set_defaults(func=cmd_replicates)
+
+    tbl = sub.add_parser("tables", parents=[common], help="Detect and backfill card-back multi-sowing tables")
+    tbl.add_argument("--backfill", action="store_true", help="Parse and store table JSON")
+    tbl.add_argument("--verbose", "-v", action="store_true", help="Show each card and its parsed rows")
+    tbl.set_defaults(func=cmd_tables)
+
+    oth = sub.add_parser("other-sowings", parents=[common], help="Detect and backfill OTHER SOWINGS table data")
+    oth.add_argument("--backfill", action="store_true", help="Parse and store OTHER SOWINGS JSON")
+    oth.add_argument("--verbose", "-v", action="store_true", help="Show each card and its parsed records")
+    oth.set_defaults(func=cmd_other_sowings)
+
+    norm = sub.add_parser("normalize", parents=[common], help="Normalize extraction fields (run on a COPY)")
+    norm.add_argument("--verbose", "-v", action="store_true", help="Show per-field update counts")
+    norm.set_defaults(func=cmd_normalize)
 
     args = parser.parse_args()
     args.func(args)

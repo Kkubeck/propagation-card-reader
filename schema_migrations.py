@@ -54,6 +54,15 @@ EXTRACTIONS_COLUMNS = {
     # Provenance for botanical_name: NULL/'ocr' = transcribed from the card;
     # 'accession_lookup' = back-filled from rag_accessions via the accession.
     "botanical_name_source": "TEXT",
+    # Parsed table rows from card-back table_continuation mode.
+    # JSON array of row objects: [{accession, qty_sown, date_sown, ...}]
+    "parsed_table_json": "TEXT",
+    # Parsed replicate data from multi-treatment cards.
+    # JSON: {replicates: [{replicate_id, treatment, location, ...}], ...}
+    "parsed_replicate_json": "TEXT",
+    # Parsed OTHER SOWINGS rows from front-card multi-sowing tables.
+    # JSON: {records: [{accession, qty_sown, date_sown, location, ...}], ...}
+    "parsed_other_sowings_json": "TEXT",
     # Shadow columns hold pre-redaction text for fields where PII can land.
     # Kept locally so regex tuning is reversible; dropped from any published
     # export. Schema-of-the-canonical fields above remains unchanged.

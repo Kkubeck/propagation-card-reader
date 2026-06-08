@@ -15,6 +15,9 @@ from filename_parser import parse_filename
 from rag_context_builder import RAGContextBuilder
 from rag_prompt import build_prompt, build_back_prompt, format_front_context, VALID_BACK_MODES
 from schema import get_db, now_iso
+from other_sowings_parser import has_other_sowings, parse_other_sowings
+from replicate_parser import is_multi_replicate, parse_replicates
+from table_parser import parse_table_text, is_table_text
 from worker import extract_page_image, parse_json_response
 
 
@@ -241,6 +244,23 @@ class RAGWorker:
             curators_info = _txt("curators_info")
             iris_data_entered = _bool("iris_data_entered")
 
+            # Detect multi-replicate treatment comparisons
+            parsed_replicate_json = None
+            if propagation_text and is_multi_replicate(propagation_text):
+                rep_result = parse_replicates(propagation_text)
+                if rep_result.replicates:
+                    parsed_replicate_json = json.dumps(rep_result.to_dict())
+
+            # Detect OTHER SOWINGS table on front
+            parsed_other_sowings_json = None
+            if propagation_text and has_other_sowings(propagation_text):
+                other_result = parse_other_sowings(propagation_text)
+                if other_result.records:
+                    parsed_other_sowings_json = json.dumps(other_result.to_dict())
+                    for rec in other_result.records:
+                        if rec.accession and rec.accession not in accessions:
+                            accessions.append(rec.accession)
+
             # Clean up any previous extraction for this card (re-processing)
             old_ext = conn.execute("SELECT id FROM extractions WHERE card_id = ?", (card_id,)).fetchone()
             if old_ext:
@@ -258,8 +278,9 @@ class RAGWorker:
                      present_location, wanted_for_area, source, source_info,
                      collector_number, other_number, labels_requested, max_quantity,
                      parent_accession, collection_info, distribution,
-                     accession_number, curators_info, iris_data_entered)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                     accession_number, curators_info, iris_data_entered,
+                     parsed_replicate_json, parsed_other_sowings_json)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     card_id,
@@ -279,6 +300,7 @@ class RAGWorker:
                     collector_number, other_number, labels_requested, max_quantity,
                     parent_accession, collection_info, distribution,
                     primary_accession_number, curators_info, iris_data_entered,
+                    parsed_replicate_json, parsed_other_sowings_json,
                 ),
             )
             extraction_id = cur.lastrowid
@@ -425,6 +447,17 @@ class RAGWorker:
             curators_info = str(curators_info).strip() if curators_info else None
             accessions = self._normalize_accessions(data.get("all_accession_numbers", []))
 
+            parsed_table_json = None
+            if mode == "table_continuation" or (mode == "unknown" and is_table_text(propagation_text)):
+                table_result = parse_table_text(propagation_text)
+                if table_result.rows:
+                    parsed_table_json = json.dumps(table_result.to_dict())
+                    for table_row in table_result.rows:
+                        if table_row.accession and table_row.accession not in accessions:
+                            accessions.append(table_row.accession)
+                    if mode == "unknown":
+                        mode = "table_continuation"
+
             # Record back mode (+ any missing-front note) in `notes` so it is
             # queryable without parsing raw_json.
             note_parts = [f"back_mode={mode}"]
@@ -446,12 +479,14 @@ class RAGWorker:
                 """
                 INSERT INTO extractions
                     (card_id, propagation_text, curators_info, notes,
+                     parsed_table_json,
                      raw_json, model, dpi, processing_time_s, created_at,
                      prompt_text, prompt_context)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     card_id, propagation_text, curators_info, notes,
+                    parsed_table_json,
                     raw_response, model, dpi, elapsed, now_iso(),
                     prompt_text, format_front_context(front_ctx) if front_ctx else None,
                 ),

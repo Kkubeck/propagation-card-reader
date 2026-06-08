@@ -234,3 +234,8 @@ auto_batch.sh
 
 # Internal-only paper planning notes (not for public repo)
 docs/paper-structural-notes-s1-s5.md
+
+# Quarto site build output
+_site/
+
+/.quarto/

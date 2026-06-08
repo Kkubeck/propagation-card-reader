@@ -20,19 +20,24 @@ cards_server <- function(id, conn, validation, images_dir = NULL) {
   shiny::moduleServer(id, function(input, output, session) {
     observe({
       current_validation <- validation()
-      if (!current_validation$valid) return()
-      status <- get_status_summary(conn())
+      shiny::req(current_validation$valid)
+      db <- tryCatch(conn(), error = function(e) NULL)
+      shiny::req(db)
+      status <- get_status_summary(db)
       shiny::updateSelectInput(session, "status_filter", choices = c("All", status$status), selected = "All")
     })
 
     filtered_total <- shiny::reactive({
       current_validation <- validation()
-      shiny::validate(shiny::need(current_validation$valid, current_validation$message))
-      get_card_count(conn(), status_filter = input$status_filter, search = input$search_text)
+      shiny::req(current_validation$valid)
+      db <- tryCatch(conn(), error = function(e) NULL)
+      shiny::req(db)
+      get_card_count(db, status_filter = input$status_filter, search = input$search_text)
     })
 
     observe({
-      total <- filtered_total()
+      total <- tryCatch(filtered_total(), error = function(e) NULL)
+      shiny::req(total)
       per_page <- as.integer(input$per_page)
       max_pages <- max(1L, ceiling(total / per_page))
       current_page <- min(max(1L, as.integer(input$page %||% 1L)), max_pages)
@@ -42,10 +47,12 @@ cards_server <- function(id, conn, validation, images_dir = NULL) {
     cards_df <- shiny::reactive({
       current_validation <- validation()
       shiny::validate(shiny::need(current_validation$valid, current_validation$message))
+      db <- conn()
+      shiny::validate(shiny::need(!is.null(db), "No database connection."))
       per_page <- as.integer(input$per_page)
       current_page <- max(1L, as.integer(input$page %||% 1L))
       offset <- (current_page - 1L) * per_page
-      get_extractions_df(conn(), limit = per_page, offset = offset, search = input$search_text, status_filter = input$status_filter)
+      get_extractions_df(db, limit = per_page, offset = offset, search = input$search_text, status_filter = input$status_filter)
     })
 
     output$page_caption <- shiny::renderText({

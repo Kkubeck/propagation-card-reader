@@ -76,9 +76,9 @@ server <- function(input, output, session) {
 
   active_conn <- reactive({
     validation <- active_db_validation()
-    validate(need(validation$valid, validation$message))
+    req(validation$valid)
     conn <- conn_state()
-    validate(need(!is.null(conn), "Unable to open database connection."))
+    req(conn)
     conn
   })
 

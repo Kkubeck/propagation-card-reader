@@ -199,9 +199,9 @@ apply_search_filter <- function(search, where_clauses, params) {
     term <- sprintf("%%%s%%", trimmed)
     where_clauses <- c(
       where_clauses,
-      "(e.botanical_name LIKE ? OR e.propagation_text LIKE ? OR e.accession_number LIKE ?)"
+      "(e.botanical_name LIKE ? OR e.propagation_text LIKE ? OR e.accession_number LIKE ? OR e.wanted_for_area LIKE ?)"
     )
-    params <- c(params, term, term, term)
+    params <- c(params, term, term, term, term)
   }
 
   list(where_clauses = where_clauses, params = params)

@@ -2,18 +2,23 @@ cards_ui <- function(id) {
   ns <- shiny::NS(id)
   shiny::tagList(
     shiny::fluidRow(
-      shiny::column(6, shiny::textInput(ns("search_text"), "Search", placeholder = "name, accession, propagation text, or id=123")),
+      shiny::column(6, shiny::textInput(ns("search_text"), "Search", placeholder = "name, accession, location, propagation text, or id=123")),
       shiny::column(3, shiny::selectInput(ns("status_filter"), "Status", choices = "All", selected = "All")),
       shiny::column(3, shiny::selectInput(ns("per_page"), "Per page", choices = c(10, 25, 50, 100), selected = 25))
     ),
     shiny::fluidRow(
-      shiny::column(4, shiny::numericInput(ns("page"), "Page", value = 1, min = 1, step = 1)),
-      shiny::column(8, shiny::div(style = "padding-top: 30px;", shiny::textOutput(ns("page_caption"))))
+      shiny::column(2, shiny::div(style = "padding-top: 25px;", shiny::actionButton(ns("prev_page"), "◀ Prev"))),
+      shiny::column(2, shiny::numericInput(ns("page"), "Page", value = 1, min = 1, step = 1)),
+      shiny::column(2, shiny::div(style = "padding-top: 25px;", shiny::actionButton(ns("next_page"), "Next ▶"))),
+      shiny::column(6, shiny::div(style = "padding-top: 30px;", shiny::textOutput(ns("page_caption"))))
     ),
     DT::DTOutput(ns("cards_table")),
     shiny::hr(),
     shiny::fluidRow(
-      shiny::column(6, shiny::uiOutput(ns("card_image_ui"))),
+      shiny::column(12, shiny::checkboxInput(ns("show_image"), "Show card image", value = FALSE))
+    ),
+    shiny::fluidRow(
+      shiny::column(if (TRUE) 6 else 0, shiny::uiOutput(ns("card_image_ui"))),
       shiny::column(6, shiny::uiOutput(ns("card_detail_ui")))
     )
   )
@@ -38,13 +43,28 @@ cards_server <- function(id, conn, validation, images_dir = NULL, pdf_roots = ch
       get_card_count(db, status_filter = input$status_filter, search = input$search_text)
     })
 
+    max_pages <- shiny::reactive({
+      total <- tryCatch(filtered_total(), error = function(e) 0L)
+      per_page <- as.integer(input$per_page)
+      max(1L, ceiling(total / per_page))
+    })
+
     observe({
       total <- tryCatch(filtered_total(), error = function(e) NULL)
       shiny::req(total)
-      per_page <- as.integer(input$per_page)
-      max_pages <- max(1L, ceiling(total / per_page))
-      current_page <- min(max(1L, as.integer(input$page %||% 1L)), max_pages)
-      shiny::updateNumericInput(session, "page", value = current_page, min = 1, max = max_pages)
+      mp <- max_pages()
+      current_page <- min(max(1L, as.integer(input$page %||% 1L)), mp)
+      shiny::updateNumericInput(session, "page", value = current_page, min = 1, max = mp)
+    })
+
+    shiny::observeEvent(input$prev_page, {
+      current <- as.integer(input$page %||% 1L)
+      if (current > 1L) shiny::updateNumericInput(session, "page", value = current - 1L)
+    })
+
+    shiny::observeEvent(input$next_page, {
+      current <- as.integer(input$page %||% 1L)
+      if (current < max_pages()) shiny::updateNumericInput(session, "page", value = current + 1L)
     })
 
     cards_df <- shiny::reactive({
@@ -86,8 +106,9 @@ cards_server <- function(id, conn, validation, images_dir = NULL, pdf_roots = ch
     })
 
     output$card_image_ui <- shiny::renderUI({
+      if (!isTRUE(input$show_image)) return(shiny::div())
       row <- selected_card()
-      if (is.null(row)) return(shiny::div())
+      if (is.null(row)) return(shiny::p(shiny::em("Select a row to view its card image.")))
 
       card <- row[1, , drop = FALSE]
       pdf_path_val <- card$pdf_path[[1]]

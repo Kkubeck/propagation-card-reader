@@ -295,11 +295,26 @@ def cmd_export(args):
         else:
             emitted.append(d)
 
-    with open(output, "w", newline="", encoding="utf-8") as f:
-        writer = csv.writer(f)
-        writer.writerow(csv_headers)
+    if output.lower().endswith(".xlsx"):
+        try:
+            from openpyxl import Workbook
+        except ImportError:
+            print("openpyxl is required for Excel export: pip install openpyxl")
+            conn.close()
+            return
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "Card Extractions"
+        ws.append(csv_headers)
         for d in emitted:
-            writer.writerow([d.get(h, "") for h in csv_headers])
+            ws.append([d.get(h, "") for h in csv_headers])
+        wb.save(output)
+    else:
+        with open(output, "w", newline="", encoding="utf-8") as f:
+            writer = csv.writer(f)
+            writer.writerow(csv_headers)
+            for d in emitted:
+                writer.writerow([d.get(h, "") for h in csv_headers])
 
     print(f"Exported {len(emitted)} rows to {output}")
     conn.close()
@@ -650,7 +665,7 @@ def main():
     st.set_defaults(func=cmd_status)
 
     exp = sub.add_parser("export", parents=[common], help="Export results to CSV")
-    exp.add_argument("--output", default="results.csv", help="Output CSV path (default: results.csv)")
+    exp.add_argument("--output", default="results.csv", help="Output path; use .xlsx extension for Excel (default: results.csv)")
     exp.set_defaults(func=cmd_export)
 
     fail = sub.add_parser("failures", parents=[common], help="Show/retry failed cards")

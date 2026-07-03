@@ -9,6 +9,7 @@ project:
     - results.qmd
     - use-it.qmd
     - about.qmd
+    - acknowledgements.qmd
 
 execute:
   enabled: false
@@ -34,6 +35,8 @@ website:
         text: Use It
       - href: about.qmd
         text: About
+      - href: acknowledgements.qmd
+        text: Acknowledgements
     right:
       - icon: github
         href: https://github.com/Kkubeck/propagation-card-reader

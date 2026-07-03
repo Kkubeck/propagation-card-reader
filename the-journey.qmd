@@ -5,7 +5,7 @@ subtitle: "Three attempts to teach a computer to read handwriting."
 
 This project did not start with the solution it uses today. It went through
 three distinct attempts, each one a response to the limitations of the technology
-available at the time and a reflection of a steep personal learning curve. 
+available at the time and a reflection of a steep personal learning curve.
 
 It would be inaccurate to view these methods as competing options; rather,
 they represent an evolution over time. When this work began, a site-specific
@@ -18,7 +18,7 @@ with modern coding tools.
 
 The first idea was the most intuitive one. If a computer needs to read specific
 handwriting on specific forms, you build and train a system from scratch to do
-exactly that. 
+exactly that.
 
 Using classic data science libraries like **scikit-learn** and deep learning
 frameworks like **PyTorch**, this approach required manually segmenting images
@@ -27,100 +27,124 @@ The goal was to feed thousands of exact examples into a custom architecture so
 it could learn to map images of text to the actual characters they represented.
 
 The bottleneck here was **variation** paired with the sheer scale of manual labor
-required for a single person working in their spare time. The archive spans over 
-fifty years and contains the handwriting of dozens of different staff members. 
-Some entries are in typewriter text, others in crisp pen, still others are written 
-in faint pencil, and a few are ghostly carbon copies. 
+required for a single person working in their spare time. The archive spans over
+fifty years and contains the handwriting of dozens of different staff members.
+Some entries are in typewriter text, others in crisp pen, still others are written
+in faint pencil, and a few are ghostly carbon copies.
 
-To make a custom PyTorch model robust enough to handle this level of noise, 
-it required an impractical amount of manually labeled training data. 
+To make a custom PyTorch model robust enough to handle this level of noise,
+it required an impractical amount of manually labeled training data.
 Without it, the model simply could not generalize across different eras
-and handwriting styles. 
+and handwriting styles.
 
 ::: {.callout-tip appearance="simple"}
-**What this taught me.** Custom training works beautifully when data is 
+**What this taught me.** Custom training works beautifully when data is
 completely uniform. When data is historical, messy, and varied, you waste months
 labeling data just to get a model to recognize basic shapes. To avoid this, you need
 a model that already arrives with a general understanding of what writing looks like.
 :::
 
-## Attempt 2: Cloud APIs and template matching
+## Attempt 2: OpenCV alignment and Google Cloud Vision
 
-The second approach offloaded the core problem of character recognition to a
-mature, external platform. The logical next step was to leverage a cloud-based
-commercial service.
+The second approach split the problem in two: use computer vision to find
+things on the card, and use a commercial cloud service to read them.
 
-Google Cloud Vision provided a powerful solution for raw text extraction.
-The workflow relied on two integrated steps:
+The first half worked beautifully. Using **OpenCV**, a widely used open-source
+computer vision library, I built an image alignment module that could reliably
+locate the card within a scanned page. A multi-template matching approach
+tried several anchor variations to find the best alignment, achieving 100%
+success on card detection.
 
-1. **Cloud extraction.** Send each card image to the cloud API to receive the raw 
-text strings along with their exact pixel coordinates on the card.
-2. **Template matching.** Write custom code that used those coordinates to map
-text back to structured fields based on the physical layout of the card (e.g., 
-if text is found within these specific boundary coordinates, 
-it must be the accession number).
+The plan was to combine this geometric alignment with fixed-coordinate
+templates: if the card is aligned, then the species name is always at these
+pixel coordinates, the accession number is always at those coordinates, and so
+on. But propagation cards are not standardized forms. Propagators wrote outside
+boxes, used margins for notes, and the internal layout shifted across decades.
+Fixed coordinates broke immediately.
 
-This strategy yielded highly readable text outputs. The cloud engine handled 
+The pivot was to use **Google Cloud Vision** for the reading itself. Google's
+API returned both the recognized text and the pixel coordinates of each word
+on the page. Custom code then mapped those word positions back to structured
+fields based on proximity to known field labels: a form of dynamic template
+matching that adapted to wherever the text actually appeared.
+
+This strategy yielded highly readable text outputs. The cloud engine handled
 handwriting variations with ease because it was built upon the exact deep-learning
 principles experimented with in Attempt 1, but scaled across billions of data points.
+On the fields it targeted, the approach reached roughly 90 to 98 percent accuracy.
 
 However, the approach was ultimately abandoned due to institutional reality.
 Processing thousands of records would have meant sending sensitive institutional
 collection data, including wild-collection provenance and donor details, to external
-corporate servers. It became clear that navigating data sovereignty and securing 
-institutional approval for off-site processing was a massive hurdle. 
-Furthermore, template matching proved exceptionally brittle. 
-The moment a horticulturist wrote outside the margins or built a condensed 
-propagation table, the rigid spatial template broke entirely.
+corporate servers. It became clear that navigating data sovereignty and securing
+institutional approval for off-site processing was a massive hurdle.
+Furthermore, template matching, even the dynamic version, proved exceptionally brittle.
+The moment a horticulturist built a condensed propagation table or reused the back
+of a card for a different species, the spatial logic broke entirely.
 
 ::: {.callout-tip appearance="simple"}
 **What this taught me.** General-purpose models solve the handwriting barrier,
 but cloud dependencies introduce issues with data sovereignty, subscription fees,
-and corporate reliance. For an institution prioritizing data privacy and 
+and corporate reliance. For an institution prioritizing data privacy and
 long-term autonomy, cloud-only pipelines are frequently a non-starter.
 :::
 
 ## Attempt 3: Local vision language models
 
-The current iteration of this project is cutting-edge, utilizing tools and 
+The current iteration of this project is cutting-edge, utilizing tools and
 architectures that did not exist even a year ago. The convergence of open-weight
 vision models, local execution engines like **Ollama**, local computing nodes,
 and advanced agentic development tools over the past 12 months has fundamentally
 changed what is possible on ordinary hardware. I say this not as a boast but as a
 call to regular folks like myself: these techniques are now available to the masses.
 
-Instead of traditional OCR that looks at characters in isolation, a 
-**Vision Language Model (VLM)** views the entire image holistically. It reads a 
+Instead of traditional OCR that looks at characters in isolation, a
+**Vision Language Model (VLM)** views the entire image holistically. It reads a
 propagation card much like a human archivist would: interpreting terms from context,
-parsing layout structure naturally, and outputting clean text. 
+parsing layout structure naturally, and outputting clean text.
 
-The engine behind this particular project is **Qwen 2.5-VL**, an open-weight model.
-Because it is open-weight, the model's learned parameters are entirely portable and 
-free to download. Served locally via Ollama, the entire pipeline processes data right
-at the workstation without an internet connection. 
+### Finding the right model
+
+The development of this pipeline began on a small desktop node running
+**Gemma 3**, Google's open-weight model, served locally through Ollama. Gemma
+handled general text well, but its accuracy on the specific challenges of
+propagation cards, faded handwriting, botanical Latin, and condensed tables,
+was not sufficient for production use.
+
+When the pipeline moved to a MacBook for deployment, **Qwen 2.5-VL** had just
+been released by Alibaba's research team. The Qwen family offered
+vision-language models at several sizes, and initial testing showed markedly
+better performance on handwritten botanical records.
+
+The question became which size to use. Larger models (12B and 14B parameters)
+produced slightly better transcriptions, but combining their memory footprint
+with the high-DPI scans required to read faded writing quickly overwhelmed the
+machine's 24 GB of unified RAM. The model and the image compete for the same
+memory: a larger model means less room for a detailed scan, and vice versa.
+
+**Qwen 2.5-VL at 7 billion parameters, paired with 175 DPI scans**, struck
+the balance. The model was sharp enough to read decades of varied handwriting,
+and the scan resolution was high enough to preserve faded characters, all
+within the memory budget of a single laptop. This is the configuration that
+processed the full archive.
 
 It is worth noting that there is no strict adherence to this specific model.
-Other excellent vision models exist (such as the 12B parameters of Google's 
-Gemma series, or 14B models from Qwen). Early in this project, I attempted to
-use heavier 12B/14B models, but combining their massive size with the high-DPI
-scans required to read faded writing quickly overwhelmed my machine's 24 GB
-of RAM. Qwen 2.5-VL struck the perfect balance for my hardware. I designed
-this as a "one and done" solution; the results are good enough that I expect never
-to have to run this archive again. However, other botanical gardens adapting this
-tool should absolutely experiment with newer, larger models if they have the
-hardware to support them.
+Other botanical gardens adapting this tool should absolutely experiment with
+newer, larger models if they have the hardware to support them. I designed
+this as a "one and done" solution; the results are good enough that I expect
+never to have to run this archive again.
 
 ### The virtue of patience
 
 Running a multi-billion-parameter neural network locally on a desktop or a repurposed
 hardware node changes the performance dynamic. It is slower than a massive cloud
-data center. 
+data center.
 
 However, as horticulturists, we are intimately familiar with waiting.
 When you sow a seed, you don't expect results overnight; we understand that complex
 systems take time to yield results. Local machine learning requires a similar mindset.
 The trade-off for absolute data sovereignty and zero operational cost is processing time.
-We are perfectly comfortable letting a local machine quietly run through the night, 
+We are perfectly comfortable letting a local machine quietly run through the night,
 germinating structured data from cold pixels at its own steady pace.
 
 ### Splitting the labor
@@ -131,8 +155,8 @@ a two-part pipeline:
 1. **The model reads.** The VLM is instructed strictly to transcribe everything
 it sees as a faithful observer. It is not asked to format or interpret data during
 the vision pass, which preserves its full cognitive capacity for raw comprehension.
-2. **The code checks.** A robust post-processing layer handles the rigid logic: 
-formatting dates, isolating accession strings, and executing 
+2. **The code checks.** A robust post-processing layer handles the rigid logic:
+formatting dates, isolating accession strings, and executing
 **Retrieval-Augmented Validation (RAV)** against internal collection reports to
 catch spelling errors or typos.
 
@@ -151,16 +175,17 @@ paradigm has shifted:
 
 | Feature | Attempt 1 | Attempt 2 | Attempt 3 |
 |---|---|---|---|
-| **Core Approach** | Custom PyTorch Pipeline | Cloud API + Coordinate Templates | Local Vision Language Model |
+| **Core Approach** | Custom PyTorch Pipeline | OpenCV Alignment + Cloud API | Local Vision Language Model |
 | **Data Privacy** | Local, but labor-intensive | Cloud-dependent (data leaves site) | Absolute (runs completely offline) |
-| **Layout Adaptability** | Rigid | Brittle (fails if text moves out of boxes) | Holistic (understands complex margins/tables) |
-| **Cost Structure** | High cost in manual labeling time | Recurring per-image API fees | Free (amortized hardware & electricity) |
+| **Layout Adaptability** | Rigid | Brittle (fails on non-standard layouts) | Holistic (understands complex layouts) |
+| **Cost Structure** | High cost in manual labeling time | Recurring per-image API fees | Free (amortized hardware + electricity) |
+| **Model Progression** | N/A | Google Cloud Vision | Gemma 3 then Qwen 2.5-VL 7B |
 | **Development Feasibility** | Required deep developer expertise | Required cloud infrastructure setup | Accelerated by modern local tools |
 
 The evolution of this project mirrors a broader democratization of technology.
 The tools did not simply get more accurate; they became accessible enough
 for an environmental professional to build, deploy, and control locally within
-a nursery setting. 
+a nursery setting.
 
 ---
 

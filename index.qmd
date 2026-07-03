@@ -94,10 +94,11 @@ each one teaching something new.
 
 If you want to understand the technical concepts without a computer science
 degree, [How It All Works](concepts.qmd) explains things like "language
-model" and "answer space" using the cards as examples.
+model" and "decision space" using the cards as examples.
 
 If you want the numbers, go to [Results](results.qmd). If you want to run it
-yourself, go to [Use It](use-it.qmd).
+yourself, go to [Use It](use-it.qmd). And if you want to know who made this
+possible, see the [Acknowledgements](acknowledgements.qmd).
 
 ::: {.mission-section}
 

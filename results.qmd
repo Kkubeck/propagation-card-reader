@@ -28,9 +28,10 @@ title: "Results"
 | Dates | [N] | [xx]% |
 | Treatment / notes | [N] | [xx]% |
 
-The earlier prototype (Google Cloud Vision + template matching) reached
-roughly **90–98%** on the fields it targeted — useful as a reference point,
-though it required cloud calls and far narrower scope.
+The earlier prototype (OpenCV alignment + Google Cloud Vision with dynamic
+template matching) reached roughly **90–98%** on the fields it targeted,
+useful as a reference point, though it required cloud calls, an internet
+connection, and far narrower scope.
 
 ## Honest failure modes
 

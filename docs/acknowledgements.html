@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>Use It – Propagation Card Reader</title>
+<title>Acknowledgements – Propagation Card Reader</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -19,40 +19,6 @@ ul.task-list li input[type="checkbox"] {
   width: 0.8em;
   margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
   vertical-align: middle;
-}
-/* CSS for syntax highlighting */
-pre > code.sourceCode { white-space: pre; position: relative; }
-pre > code.sourceCode > span { line-height: 1.25; }
-pre > code.sourceCode > span:empty { height: 1.2em; }
-.sourceCode { overflow: visible; }
-code.sourceCode > span { color: inherit; text-decoration: inherit; }
-div.sourceCode { margin: 1em 0; }
-pre.sourceCode { margin: 0; }
-@media screen {
-div.sourceCode { overflow: auto; }
-}
-@media print {
-pre > code.sourceCode { white-space: pre-wrap; }
-pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
-}
-pre.numberSource code
-  { counter-reset: source-line 0; }
-pre.numberSource code > span
-  { position: relative; left: -4em; counter-increment: source-line; }
-pre.numberSource code > span > a:first-child::before
-  { content: counter(source-line);
-    position: relative; left: -1em; text-align: right; vertical-align: baseline;
-    border: none; display: inline-block;
-    -webkit-touch-callout: none; -webkit-user-select: none;
-    -khtml-user-select: none; -moz-user-select: none;
-    -ms-user-select: none; user-select: none;
-    padding: 0 4px; width: 4em;
-  }
-pre.numberSource { margin-left: 3em;  padding-left: 4px; }
-div.sourceCode
-  {   }
-@media screen {
-pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
 }
 </style>
 
@@ -143,7 +109,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span class="menu-text">Results</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link active" href="./use-it.html" aria-current="page"> 
+    <a class="nav-link" href="./use-it.html"> 
 <span class="menu-text">Use It</span></a>
   </li>  
   <li class="nav-item">
@@ -151,7 +117,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span class="menu-text">About</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="./acknowledgements.html"> 
+    <a class="nav-link active" href="./acknowledgements.html" aria-current="page"> 
 <span class="menu-text">Acknowledgements</span></a>
   </li>  
 </ul>
@@ -177,9 +143,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#quick-start" id="toc-quick-start" class="nav-link active" data-scroll-target="#quick-start">Quick start</a></li>
-  <li><a href="#what-you-need" id="toc-what-you-need" class="nav-link" data-scroll-target="#what-you-need">What you need</a></li>
-  <li><a href="#cli-reference" id="toc-cli-reference" class="nav-link" data-scroll-target="#cli-reference">CLI reference</a></li>
+  <li><a href="#ubcbg-nursery-propagation-staff" id="toc-ubcbg-nursery-propagation-staff" class="nav-link active" data-scroll-target="#ubcbg-nursery-propagation-staff">UBCBG Nursery propagation staff</a></li>
+  <li><a href="#ubc-botanical-garden" id="toc-ubc-botanical-garden" class="nav-link" data-scroll-target="#ubc-botanical-garden">UBC Botanical Garden</a></li>
+  <li><a href="#open-source-projects" id="toc-open-source-projects" class="nav-link" data-scroll-target="#open-source-projects">Open-source projects</a></li>
+  <li><a href="#development-tools" id="toc-development-tools" class="nav-link" data-scroll-target="#development-tools">Development tools</a></li>
   </ul>
 </nav>
     </div>
@@ -188,7 +155,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Use It</h1>
+<h1 class="title">Acknowledgements</h1>
+<p class="subtitle lead">The people who wrote it down.</p>
 </div>
 
 
@@ -205,90 +173,35 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </header>
 
 
-<p>The tool is open source and designed to run on hardware you already own. You’ll need a machine that can run <a href="https://ollama.com">Ollama</a> with a vision model, and your scanned cards as PDFs.</p>
-<section id="quick-start" class="level2">
-<h2 class="anchored" data-anchor-id="quick-start">Quick start</h2>
-<div class="sourceCode" id="cb1"><pre class="sourceCode sh code-with-copy"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 1. Clone</span></span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> clone https://github.com/Kkubeck/propagation-card-reader.git</span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> propagation-card-reader</span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="co"># 2. Conda env (Mac/Linux)</span></span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="ex">conda</span> env create <span class="at">-f</span> environment.yml</span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="ex">conda</span> activate prop-card-reader</span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="co"># 3. Start Ollama somewhere reachable and pull the vision model</span></span>
-<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="ex">ollama</span> pull qwen2.5vl:7b</span>
-<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="co"># 4. Build the RAG taxonomy index (one-time, from your accession CSV exports)</span></span>
-<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a><span class="ex">python</span> rag_index_builder.py</span>
-<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a><span class="co"># 5. Inventory PDFs, then process</span></span>
-<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a><span class="ex">python</span> run.py inventory <span class="at">--pdf-dir</span> path/to/cards</span>
-<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a><span class="ex">python</span> run.py process <span class="at">--mode</span> rag <span class="at">--dpi</span> 175</span>
-<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a><span class="co"># 6. Inspect / export</span></span>
-<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a><span class="ex">python</span> db_viewer.py            <span class="co"># Streamlit UI</span></span>
-<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a><span class="ex">python</span> run.py export <span class="at">-o</span> out.csv</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>The data in this project was not generated by a machine. Every record began as a handwritten entry on a paper card, made by someone standing at a potting bench, often with soil on their hands. This page recognizes the people whose daily work created the archive that made this project possible.</p>
+<section id="ubcbg-nursery-propagation-staff" class="level2">
+<h2 class="anchored" data-anchor-id="ubcbg-nursery-propagation-staff">UBCBG Nursery propagation staff</h2>
+<p>The propagation cards span roughly fifty years of horticultural practice at the University of British Columbia Botanical Garden Nursery. Over that time, approximately twenty horticulturists, propagators, and nursery staff recorded their work on these cards. Their handwriting is, quite literally, the raw material of this project.</p>
+<blockquote class="blockquote">
+<p><em>To be populated with individual acknowledgements as records are reviewed and staff identified. Many contributors can be recognized through initials and handwriting on the cards themselves.</em></p>
+</blockquote>
 </section>
-<section id="what-you-need" class="level2">
-<h2 class="anchored" data-anchor-id="what-you-need">What you need</h2>
+<section id="ubc-botanical-garden" class="level2">
+<h2 class="anchored" data-anchor-id="ubc-botanical-garden">UBC Botanical Garden</h2>
+<p>This work exists within the broader institutional context of the UBC Botanical Garden, whose staff, administration, and volunteers, past and present, have maintained the living collections for over a century. The Garden’s commitment to conservation, research, and public education provides the foundation on which projects like this one are built.</p>
+</section>
+<section id="open-source-projects" class="level2">
+<h2 class="anchored" data-anchor-id="open-source-projects">Open-source projects</h2>
+<p>The Propagation Card Reader is built entirely on open-source software. The following projects made this work possible:</p>
 <ul>
-<li><strong>A vision-capable LLM host</strong> — Ollama serving <code>qwen2.5vl:7b</code>. It can run on the same machine or another box on your network (point <code>--ollama</code> at it).</li>
-<li><strong>Your cards as PDFs</strong> — multi-page scans are fine; the tool splits them.</li>
-<li><strong>Accession exports (optional but recommended)</strong> — CSV exports from your collection system power the RAG taxonomy validation. The tool works without them, just with less cross-checking.</li>
+<li><strong><a href="https://ollama.com/">Ollama</a></strong> – local model serving engine</li>
+<li><strong><a href="https://github.com/QwenLM/Qwen2.5-VL">Qwen 2.5-VL</a></strong> – vision language model (Alibaba Qwen team)</li>
+<li><strong><a href="https://ai.google.dev/gemma">Gemma 3</a></strong> – vision language model used during early development (Google DeepMind)</li>
+<li><strong><a href="https://opencv.org/">OpenCV</a></strong> – computer vision library used in the template matching prototype</li>
+<li><strong><a href="https://pymupdf.readthedocs.io/">PyMuPDF</a></strong> – PDF rendering and page extraction</li>
+<li><strong><a href="https://quarto.org/">Quarto</a></strong> – this website</li>
+<li><strong><a href="https://sqlite.org/">SQLite</a></strong> – database engine</li>
+<li><strong><a href="https://python.org/">Python</a></strong> and the broader scientific Python ecosystem</li>
 </ul>
 </section>
-<section id="cli-reference" class="level2">
-<h2 class="anchored" data-anchor-id="cli-reference">CLI reference</h2>
-<p><code>run.py</code> is the entry point:</p>
-<table class="caption-top table">
-<colgroup>
-<col style="width: 50%">
-<col style="width: 50%">
-</colgroup>
-<thead>
-<tr class="header">
-<th>Command</th>
-<th>Purpose</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td><code>inventory --pdf-dir DIR</code></td>
-<td>Scan PDFs and build the card inventory</td>
-</tr>
-<tr class="even">
-<td><code>process --mode rag --dpi 175</code></td>
-<td>Process pending cards through the pipeline</td>
-</tr>
-<tr class="odd">
-<td><code>status</code></td>
-<td>Show processing progress</td>
-</tr>
-<tr class="even">
-<td><code>export -o out.csv</code></td>
-<td>Export extracted records to CSV</td>
-</tr>
-<tr class="odd">
-<td><code>failures [--retry]</code></td>
-<td>List or re-run failed cards</td>
-</tr>
-</tbody>
-</table>
-<p>See the repository’s <code>README.md</code> and <code>docs/</code> for full flags, the extraction schema, and card-layout field mappings.</p>
-<div class="callout callout-style-default callout-tip callout-titled">
-<div class="callout-header d-flex align-content-center">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
-</div>
-<div class="callout-title-container flex-fill">
-Tip
-</div>
-</div>
-<div class="callout-body-container callout-body">
-<p>This was built for one garden’s archive but is meant to generalize. If you’re at another institution with a paper propagation archive, the pipeline is the starting point — get in touch via the <a href="https://github.com/Kkubeck/propagation-card-reader">GitHub repo</a>.</p>
-</div>
-</div>
+<section id="development-tools" class="level2">
+<h2 class="anchored" data-anchor-id="development-tools">Development tools</h2>
+<p>The final iteration of this project was developed using an agentic coding workflow, with <strong>Claude Opus 4.6</strong> (Anthropic) as an orchestrator and the <strong><a href="https://github.com/openclaw/openclaw">OpenClaw</a></strong> system as a local development harness.</p>
 
 
 </section>

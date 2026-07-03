@@ -116,6 +116,10 @@ ul.task-list li input[type="checkbox"] {
     <a class="nav-link" href="./about.html"> 
 <span class="menu-text">About</span></a>
   </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="./acknowledgements.html"> 
+<span class="menu-text">Acknowledgements</span></a>
+  </li>  
 </ul>
             <ul class="navbar-nav navbar-nav-scroll ms-auto">
   <li class="nav-item compact">
@@ -140,9 +144,10 @@ ul.task-list li input[type="checkbox"] {
    
   <ul>
   <li><a href="#attempt-1-building-a-custom-pipeline-from-scratch" id="toc-attempt-1-building-a-custom-pipeline-from-scratch" class="nav-link active" data-scroll-target="#attempt-1-building-a-custom-pipeline-from-scratch">Attempt 1: Building a custom pipeline from scratch</a></li>
-  <li><a href="#attempt-2-cloud-apis-and-template-matching" id="toc-attempt-2-cloud-apis-and-template-matching" class="nav-link" data-scroll-target="#attempt-2-cloud-apis-and-template-matching">Attempt 2: Cloud APIs and template matching</a></li>
+  <li><a href="#attempt-2-opencv-alignment-and-google-cloud-vision" id="toc-attempt-2-opencv-alignment-and-google-cloud-vision" class="nav-link" data-scroll-target="#attempt-2-opencv-alignment-and-google-cloud-vision">Attempt 2: OpenCV alignment and Google Cloud Vision</a></li>
   <li><a href="#attempt-3-local-vision-language-models" id="toc-attempt-3-local-vision-language-models" class="nav-link" data-scroll-target="#attempt-3-local-vision-language-models">Attempt 3: Local vision language models</a>
   <ul class="collapse">
+  <li><a href="#finding-the-right-model" id="toc-finding-the-right-model" class="nav-link" data-scroll-target="#finding-the-right-model">Finding the right model</a></li>
   <li><a href="#the-virtue-of-patience" id="toc-the-virtue-of-patience" class="nav-link" data-scroll-target="#the-virtue-of-patience">The virtue of patience</a></li>
   <li><a href="#splitting-the-labor" id="toc-splitting-the-labor" class="nav-link" data-scroll-target="#splitting-the-labor">Splitting the labor</a></li>
   </ul></li>
@@ -192,16 +197,14 @@ ul.task-list li input[type="checkbox"] {
 </div>
 </div>
 </section>
-<section id="attempt-2-cloud-apis-and-template-matching" class="level2">
-<h2 class="anchored" data-anchor-id="attempt-2-cloud-apis-and-template-matching">Attempt 2: Cloud APIs and template matching</h2>
-<p>The second approach offloaded the core problem of character recognition to a mature, external platform. The logical next step was to leverage a cloud-based commercial service.</p>
-<p>Google Cloud Vision provided a powerful solution for raw text extraction. The workflow relied on two integrated steps:</p>
-<ol type="1">
-<li><strong>Cloud extraction.</strong> Send each card image to the cloud API to receive the raw text strings along with their exact pixel coordinates on the card.</li>
-<li><strong>Template matching.</strong> Write custom code that used those coordinates to map text back to structured fields based on the physical layout of the card (e.g., if text is found within these specific boundary coordinates, it must be the accession number).</li>
-</ol>
-<p>This strategy yielded highly readable text outputs. The cloud engine handled handwriting variations with ease because it was built upon the exact deep-learning principles experimented with in Attempt 1, but scaled across billions of data points.</p>
-<p>However, the approach was ultimately abandoned due to institutional reality. Processing thousands of records would have meant sending sensitive institutional collection data, including wild-collection provenance and donor details, to external corporate servers. It became clear that navigating data sovereignty and securing institutional approval for off-site processing was a massive hurdle. Furthermore, template matching proved exceptionally brittle. The moment a horticulturist wrote outside the margins or built a condensed propagation table, the rigid spatial template broke entirely.</p>
+<section id="attempt-2-opencv-alignment-and-google-cloud-vision" class="level2">
+<h2 class="anchored" data-anchor-id="attempt-2-opencv-alignment-and-google-cloud-vision">Attempt 2: OpenCV alignment and Google Cloud Vision</h2>
+<p>The second approach split the problem in two: use computer vision to find things on the card, and use a commercial cloud service to read them.</p>
+<p>The first half worked beautifully. Using <strong>OpenCV</strong>, a widely used open-source computer vision library, I built an image alignment module that could reliably locate the card within a scanned page. A multi-template matching approach tried several anchor variations to find the best alignment, achieving 100% success on card detection.</p>
+<p>The plan was to combine this geometric alignment with fixed-coordinate templates: if the card is aligned, then the species name is always at these pixel coordinates, the accession number is always at those coordinates, and so on. But propagation cards are not standardized forms. Propagators wrote outside boxes, used margins for notes, and the internal layout shifted across decades. Fixed coordinates broke immediately.</p>
+<p>The pivot was to use <strong>Google Cloud Vision</strong> for the reading itself. Google’s API returned both the recognized text and the pixel coordinates of each word on the page. Custom code then mapped those word positions back to structured fields based on proximity to known field labels: a form of dynamic template matching that adapted to wherever the text actually appeared.</p>
+<p>This strategy yielded highly readable text outputs. The cloud engine handled handwriting variations with ease because it was built upon the exact deep-learning principles experimented with in Attempt 1, but scaled across billions of data points. On the fields it targeted, the approach reached roughly 90 to 98 percent accuracy.</p>
+<p>However, the approach was ultimately abandoned due to institutional reality. Processing thousands of records would have meant sending sensitive institutional collection data, including wild-collection provenance and donor details, to external corporate servers. It became clear that navigating data sovereignty and securing institutional approval for off-site processing was a massive hurdle. Furthermore, template matching, even the dynamic version, proved exceptionally brittle. The moment a horticulturist built a condensed propagation table or reused the back of a card for a different species, the spatial logic broke entirely.</p>
 <div class="callout callout-style-simple callout-tip">
 <div class="callout-body d-flex">
 <div class="callout-icon-container">
@@ -217,8 +220,14 @@ ul.task-list li input[type="checkbox"] {
 <h2 class="anchored" data-anchor-id="attempt-3-local-vision-language-models">Attempt 3: Local vision language models</h2>
 <p>The current iteration of this project is cutting-edge, utilizing tools and architectures that did not exist even a year ago. The convergence of open-weight vision models, local execution engines like <strong>Ollama</strong>, local computing nodes, and advanced agentic development tools over the past 12 months has fundamentally changed what is possible on ordinary hardware. I say this not as a boast but as a call to regular folks like myself: these techniques are now available to the masses.</p>
 <p>Instead of traditional OCR that looks at characters in isolation, a <strong>Vision Language Model (VLM)</strong> views the entire image holistically. It reads a propagation card much like a human archivist would: interpreting terms from context, parsing layout structure naturally, and outputting clean text.</p>
-<p>The engine behind this particular project is <strong>Qwen 2.5-VL</strong>, an open-weight model. Because it is open-weight, the model’s learned parameters are entirely portable and free to download. Served locally via Ollama, the entire pipeline processes data right at the workstation without an internet connection.</p>
-<p>It is worth noting that there is no strict adherence to this specific model. Other excellent vision models exist (such as the 12B parameters of Google’s Gemma series, or 14B models from Qwen). Early in this project, I attempted to use heavier 12B/14B models, but combining their massive size with the high-DPI scans required to read faded writing quickly overwhelmed my machine’s 24 GB of RAM. Qwen 2.5-VL struck the perfect balance for my hardware. I designed this as a “one and done” solution; the results are good enough that I expect never to have to run this archive again. However, other botanical gardens adapting this tool should absolutely experiment with newer, larger models if they have the hardware to support them.</p>
+<section id="finding-the-right-model" class="level3">
+<h3 class="anchored" data-anchor-id="finding-the-right-model">Finding the right model</h3>
+<p>The development of this pipeline began on a small desktop node running <strong>Gemma 3</strong>, Google’s open-weight model, served locally through Ollama. Gemma handled general text well, but its accuracy on the specific challenges of propagation cards, faded handwriting, botanical Latin, and condensed tables, was not sufficient for production use.</p>
+<p>When the pipeline moved to a MacBook for deployment, <strong>Qwen 2.5-VL</strong> had just been released by Alibaba’s research team. The Qwen family offered vision-language models at several sizes, and initial testing showed markedly better performance on handwritten botanical records.</p>
+<p>The question became which size to use. Larger models (12B and 14B parameters) produced slightly better transcriptions, but combining their memory footprint with the high-DPI scans required to read faded writing quickly overwhelmed the machine’s 24 GB of unified RAM. The model and the image compete for the same memory: a larger model means less room for a detailed scan, and vice versa.</p>
+<p><strong>Qwen 2.5-VL at 7 billion parameters, paired with 175 DPI scans</strong>, struck the balance. The model was sharp enough to read decades of varied handwriting, and the scan resolution was high enough to preserve faded characters, all within the memory budget of a single laptop. This is the configuration that processed the full archive.</p>
+<p>It is worth noting that there is no strict adherence to this specific model. Other botanical gardens adapting this tool should absolutely experiment with newer, larger models if they have the hardware to support them. I designed this as a “one and done” solution; the results are good enough that I expect never to have to run this archive again.</p>
+</section>
 <section id="the-virtue-of-patience" class="level3">
 <h3 class="anchored" data-anchor-id="the-virtue-of-patience">The virtue of patience</h3>
 <p>Running a multi-billion-parameter neural network locally on a desktop or a repurposed hardware node changes the performance dynamic. It is slower than a massive cloud data center.</p>
@@ -265,7 +274,7 @@ ul.task-list li input[type="checkbox"] {
 <tr class="odd">
 <td><strong>Core Approach</strong></td>
 <td>Custom PyTorch Pipeline</td>
-<td>Cloud API + Coordinate Templates</td>
+<td>OpenCV Alignment + Cloud API</td>
 <td>Local Vision Language Model</td>
 </tr>
 <tr class="even">
@@ -277,16 +286,22 @@ ul.task-list li input[type="checkbox"] {
 <tr class="odd">
 <td><strong>Layout Adaptability</strong></td>
 <td>Rigid</td>
-<td>Brittle (fails if text moves out of boxes)</td>
-<td>Holistic (understands complex margins/tables)</td>
+<td>Brittle (fails on non-standard layouts)</td>
+<td>Holistic (understands complex layouts)</td>
 </tr>
 <tr class="even">
 <td><strong>Cost Structure</strong></td>
 <td>High cost in manual labeling time</td>
 <td>Recurring per-image API fees</td>
-<td>Free (amortized hardware &amp; electricity)</td>
+<td>Free (amortized hardware + electricity)</td>
 </tr>
 <tr class="odd">
+<td><strong>Model Progression</strong></td>
+<td>N/A</td>
+<td>Google Cloud Vision</td>
+<td>Gemma 3 then Qwen 2.5-VL 7B</td>
+</tr>
+<tr class="even">
 <td><strong>Development Feasibility</strong></td>
 <td>Required deep developer expertise</td>
 <td>Required cloud infrastructure setup</td>

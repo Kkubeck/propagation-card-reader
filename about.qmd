@@ -31,7 +31,7 @@ system as a harness.
 For a botanical garden, collection data can be highly sensitive, especially when it involves
 rare-species locations, provenance, and historical institutional records. Keeping the entire OCR
 pipeline on local hardware ensures the garden never has to trade privacy or budget for the 
-benefitsof digitization. That principle is the core motivation behind this tool.
+benefits of digitization. That principle is the core motivation behind this tool.
 
 ## License & code
 

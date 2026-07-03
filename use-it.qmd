@@ -1,0 +1,63 @@
+---
+title: "Use It"
+---
+
+The tool is open source and designed to run on hardware you already own.
+You'll need a machine that can run [Ollama](https://ollama.com) with a vision
+model, and your scanned cards as PDFs.
+
+## Quick start
+
+```sh
+# 1. Clone
+git clone https://github.com/Kkubeck/propagation-card-reader.git
+cd propagation-card-reader
+
+# 2. Conda env (Mac/Linux)
+conda env create -f environment.yml
+conda activate prop-card-reader
+
+# 3. Start Ollama somewhere reachable and pull the vision model
+ollama pull qwen2.5vl:7b
+
+# 4. Build the RAG taxonomy index (one-time, from your accession CSV exports)
+python rag_index_builder.py
+
+# 5. Inventory PDFs, then process
+python run.py inventory --pdf-dir path/to/cards
+python run.py process --mode rag --dpi 175
+
+# 6. Inspect / export
+python db_viewer.py            # Streamlit UI
+python run.py export -o out.csv
+```
+
+## What you need
+
+- **A vision-capable LLM host** — Ollama serving `qwen2.5vl:7b`. It can run on
+  the same machine or another box on your network (point `--ollama` at it).
+- **Your cards as PDFs** — multi-page scans are fine; the tool splits them.
+- **Accession exports (optional but recommended)** — CSV exports from your
+  collection system power the RAG taxonomy validation. The tool works without
+  them, just with less cross-checking.
+
+## CLI reference
+
+`run.py` is the entry point:
+
+| Command | Purpose |
+|---|---|
+| `inventory --pdf-dir DIR` | Scan PDFs and build the card inventory |
+| `process --mode rag --dpi 175` | Process pending cards through the pipeline |
+| `status` | Show processing progress |
+| `export -o out.csv` | Export extracted records to CSV |
+| `failures [--retry]` | List or re-run failed cards |
+
+See the repository's `README.md` and `docs/` for full flags, the extraction
+schema, and card-layout field mappings.
+
+::: {.callout-tip}
+This was built for one garden's archive but is meant to generalize. If you're
+at another institution with a paper propagation archive, the pipeline is the
+starting point — get in touch via the [GitHub repo](https://github.com/Kkubeck/propagation-card-reader).
+:::

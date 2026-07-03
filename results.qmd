@@ -1,0 +1,49 @@
+---
+title: "Results"
+---
+
+> **Status:** the figures below are placeholders pending the final scoring run.
+> Numbers will be pulled directly from `cards.db`, not hand-entered. Treat the
+> bracketed values as TODOs.
+
+## Scale
+
+| Metric | Value |
+|---|---|
+| Source PDFs processed | 514 |
+| Individual cards extracted | ~12,700 |
+| Fields captured per card | 20 |
+| Hardware | Apple Silicon Mac (M4, 24 GB), no internet |
+| Model | `qwen2.5vl:7b` via Ollama |
+| Render resolution | 175 DPI |
+
+## Accuracy
+
+> *(Placeholder — fill from the scored sample.)*
+
+| Field group | Cards scored | Field-level accuracy |
+|---|---|---|
+| Accession number | [N] | [xx]% |
+| Taxon name | [N] | [xx]% |
+| Dates | [N] | [xx]% |
+| Treatment / notes | [N] | [xx]% |
+
+The earlier prototype (Google Cloud Vision + template matching) reached
+roughly **90–98%** on the fields it targeted — useful as a reference point,
+though it required cloud calls and far narrower scope.
+
+## Honest failure modes
+
+Credibility comes from naming what doesn't work:
+
+- **Condensed multi-sowing tables** — the hardest case; several accessions on
+  one card, easy to merge or drop rows.
+- **Faded carbon copies** — low-contrast old cards degrade transcription.
+- **Ambiguous handwriting on accession digits** — a single misread digit
+  produces a plausible-but-wrong accession; the RAG validation step catches
+  many but not all of these.
+- **No-accession cards** — pre-2012 failed sowings rely on taxon-name matching,
+  which inherits any error in the taxon transcription.
+
+> *(Placeholder — add 2–3 example failure cards from `data/failed-card-samples/`
+> with a one-line note on each, once cleared for public sharing.)*

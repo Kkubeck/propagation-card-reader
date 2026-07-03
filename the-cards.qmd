@@ -1,0 +1,141 @@
+---
+title: "The Cards"
+subtitle: "Meet the records before meeting the technology."
+---
+
+Before explaining how a computer reads a propagation card, it helps to
+understand what a propagation card actually is, what information it holds, and
+why the format is the way it is.
+
+## What you are looking at
+
+A propagation card is a small paper record, measuring 8 inches wide by 5 inches tall,
+that tracks a single propagation event: one batch of seed sown, or one set of
+cuttings stuck. The card is created when material arrives and is updated by
+hand as the process unfolds.
+
+Each card records:
+
+- **The identity.** The scientific name (genus, species, author), botanical family, and, in most cases, an **accession number**.
+- **Where the material came from.** A collector's name, a collection number, a
+  source institution, or a wild-collection site. Cards might also include extra information for the curator, such as flower color or a form particularity.
+- **What was done to it.** Sowing date, treatment(s) (cold stratification, soaking,
+  scarification, etc.), growing medium, and location in the nursery.
+- **What happened.** Germination date, number of seedlings, transplant date, or
+  failure and disposal.
+
+The card is a complete biography of a propagation attempt, from arrival to
+its ultimate outcome: being planted out in the Botanical Garden.
+
+> *Placeholder: annotated image of a dummy propagation card, showing each
+> field labeled. Kevin to create sample cards that are safe for public display.*
+
+## Two eras of card
+
+The archive this project looked at spans roughly fifty years, and the card
+format changed partway through. Understanding the difference matters because
+the computer has to handle both. 
+
+### Old cards (pre-2017)
+
+The older cards are carbon-copy triplicates, written in pen or pencil.
+They have about seven rows of printed metadata fields across the top, with
+handwritten entries filled in. Dates are written as day/month/year. While the
+accession number format changed twice over five decades, it always maintained a
+clearly defined field on the right-hand side of the card.
+
+These cards are often faded. The carbon copies, especially the second and
+third sheets, can be difficult to read even by eye.
+
+> *Placeholder: image of a dummy old-format card.*
+
+### New cards (post-2017)
+
+When the garden adopted a new accession management system (IrisBG), the card
+format was simplified. New cards are printed on card stock with four rows of
+metadata. Dates are written as year/month/day. 
+
+This new format is not inherently "better" or cleaner than the old cards.
+The simplified layout simply reflects a diminished need to reproduce all the 
+metadata on the physical card, since that information now exists in the digital
+Collection database. The legibility of these cards still varies entirely based
+on the handwriting of whoever filled them out.
+
+> *Placeholder: image of a dummy new-format card.*
+
+## The hard cases
+
+Most cards follow a straightforward layout: one species, one sowing, a few
+dates, an outcome. But a significant portion of the archive contains cards
+that are harder to read, both for humans and machines.
+
+### Faded carbon copies
+
+The oldest cards in the archive are carbon triplicates. The top copy is
+usually readable; the second and third copies can be ghostly. A person
+squinting at the card might recognize a familiar species name or fill in a
+date from context. Teaching a computer to do the same is a real challenge.
+
+### Condensed propagation tables
+
+As cards piled up over the decades, workers took to condensing information.
+A propagator would use a single card to create a handwritten propagation table,
+recording a series of sowings of the same species across different years to 
+allow for rapid comparison of techniques on identical taxa. These multi-sowing
+cards can contain five, ten, even fifteen separate accessions with their own
+dates and outcomes, packed into a space designed for a single observation.
+
+These are among the most valuable records in the archive because they show
+repeated attempts with the same species over time. They are also the hardest
+for the computer to parse correctly.
+
+### Duplexed cards (Two-sided records)
+
+When space ran out on the front of a card, propagators simply flipped it over.
+Important notes, secondary treatments, continued observations, and expanded
+propagation tables were frequently written on the back. A system reading these
+records must be able to link the front and back scans of the same physical card
+to process it as a single logical document.
+
+### No accession number
+
+Before roughly 2012, a propagation attempt did not receive an accession number
+until it succeeded. If a sowing failed, the card was filed with no accession
+at all, only a species name.
+
+This means that for the earliest decades of the archive, failed attempts are
+essentially invisible to the accession database. The card may be the only
+surviving record that the attempt was ever made. Reading these cards recovers
+information that otherwise would not exist in any digital system.
+
+## Why the cards matter
+
+It is easy to look at a filing cabinet full of handwritten cards and see a
+data entry problem. But that framing misses the point.
+
+These cards represent **institutional memory**: the accumulated judgment of
+every propagator who worked at the garden. Which species need cold
+stratification. How long to soak a hard-coated seed. Which treatments were
+tried and failed. When to give up and when to wait another season.
+
+That knowledge is not in any textbook. It was learned by doing, recorded by
+hand, and filed away. When the person who wrote the card retires, the
+knowledge does not transfer automatically. It sits in the drawer, waiting for
+someone to ask the right question.
+
+Beyond capturing techniques, there is the profound possibility of recapturing data
+that has been "lost" to the current system due to decades of historical data 
+management shifts. There are mature plants growing in the Garden right now whose 
+early histories were severed from their digital records during past database 
+migrations. By digitizing the original paper, we have the promising potential to
+give these "silent" accessions a voice again, re-rooting them in their own
+documented history. While we haven't yet analyzed the resulting database closely
+enough to find specific examples, the prospect of reconnecting a living collection
+with its forgotten origins remains one of the most exciting possibilities of this work.
+
+The purpose of this project is to make it possible to ask those questions and recover those stories.
+
+---
+
+Next: [The Journey](the-journey.qmd), the story of three attempts to teach a
+computer to read these cards.

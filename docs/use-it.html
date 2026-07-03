@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>Propagation Card Reader</title>
+<title>Use It – Propagation Card Reader</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -19,6 +19,40 @@ ul.task-list li input[type="checkbox"] {
   width: 0.8em;
   margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
   vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
 }
 </style>
 
@@ -89,7 +123,7 @@ ul.task-list li input[type="checkbox"] {
           <div class="collapse navbar-collapse" id="navbarCollapse">
             <ul class="navbar-nav navbar-nav-scroll me-auto">
   <li class="nav-item">
-    <a class="nav-link active" href="./index.html" aria-current="page"> 
+    <a class="nav-link" href="./index.html"> 
 <span class="menu-text">Home</span></a>
   </li>  
   <li class="nav-item">
@@ -109,7 +143,7 @@ ul.task-list li input[type="checkbox"] {
 <span class="menu-text">Results</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="./use-it.html"> 
+    <a class="nav-link active" href="./use-it.html" aria-current="page"> 
 <span class="menu-text">Use It</span></a>
   </li>  
   <li class="nav-item">
@@ -131,22 +165,31 @@ ul.task-list li input[type="checkbox"] {
     </nav>
 </header>
 <!-- content -->
-<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-full page-navbar">
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
 <!-- sidebar -->
 <!-- margin-sidebar -->
-    
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#quick-start" id="toc-quick-start" class="nav-link active" data-scroll-target="#quick-start">Quick start</a></li>
+  <li><a href="#what-you-need" id="toc-what-you-need" class="nav-link" data-scroll-target="#what-you-need">What you need</a></li>
+  <li><a href="#cli-reference" id="toc-cli-reference" class="nav-link" data-scroll-target="#cli-reference">CLI reference</a></li>
+  </ul>
+</nav>
+    </div>
 <!-- main -->
-<main class="content column-page" id="quarto-document-content">
+<main class="content" id="quarto-document-content">
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Propagation Card Reader</h1>
-<p class="subtitle lead">Reading 50 years of handwritten botanical knowledge, on a laptop.</p>
+<h1 class="title">Use It</h1>
 </div>
 
 
 
-<div class="quarto-title-meta column-page">
+<div class="quarto-title-meta">
 
     
   
@@ -158,46 +201,89 @@ ul.task-list li input[type="checkbox"] {
 </header>
 
 
-<section id="someone-wrote-this-down-for-a-reason." class="level1 hero-title hero-section">
-<h1 class="hero-title">Someone wrote this down for a reason.</h1>
-<p>For more than fifty years, the people who grow plants for a botanical garden have been recording their processes on small paper cards. Every seed sown, every cutting stuck, every success and failure, written by hand and filed in a cabinet.</p>
-<p>Thousands of cards. Decades of knowledge. Sitting in drawers.</p>
-<p>This project reads them.</p>
+<p>The tool is open source and designed to run on hardware you already own. You’ll need a machine that can run <a href="https://ollama.com">Ollama</a> with a vision model, and your scanned cards as PDFs.</p>
+<section id="quick-start" class="level2">
+<h2 class="anchored" data-anchor-id="quick-start">Quick start</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode sh code-with-copy"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 1. Clone</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> clone https://github.com/Kkubeck/propagation-card-reader.git</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> propagation-card-reader</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="co"># 2. Conda env (Mac/Linux)</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="ex">conda</span> env create <span class="at">-f</span> environment.yml</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="ex">conda</span> activate prop-card-reader</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="co"># 3. Start Ollama somewhere reachable and pull the vision model</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="ex">ollama</span> pull qwen2.5vl:7b</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="co"># 4. Build the RAG taxonomy index (one-time, from your accession CSV exports)</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a><span class="ex">python</span> rag_index_builder.py</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a><span class="co"># 5. Inventory PDFs, then process</span></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a><span class="ex">python</span> run.py inventory <span class="at">--pdf-dir</span> path/to/cards</span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a><span class="ex">python</span> run.py process <span class="at">--mode</span> rag <span class="at">--dpi</span> 175</span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a><span class="co"># 6. Inspect / export</span></span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a><span class="ex">python</span> db_viewer.py            <span class="co"># Streamlit UI</span></span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a><span class="ex">python</span> run.py export <span class="at">-o</span> out.csv</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
-<hr>
-<section id="what-are-propagation-cards" class="level2">
-<h2 class="anchored" data-anchor-id="what-are-propagation-cards">What are propagation cards?</h2>
-<p>Every plant production facility needs to document its processes, if only to make things more efficient the next time around. This documentation becomes critical when the “next time” is twenty years from now, and a completely different person is doing the work. At the UBCBG Nursery, we handle diverse and sometimes rare material that might never be collected again. Maximizing the probability of success is imperative.</p>
-<p>Historically, before digital databases, the “accession card” was the primary record of a plant’s existence in the Collection. These were printed in triplicate: the top copy accompanied the seed packet to the nursery, while the other two remained with the Collection Technician and the Curator. Because of this historical workflow, the terms “accession card” and “propagation card” are used interchangeably in this project.</p>
-<p>The card follows that material through every physical step at the Nursery: sowing, treatment, germination, transplanting. The original intent was that each card act as a single observation of a single accession, handwritten by the person doing the work. Over the decades, as cards piled up, workers took to condensing the information. They created hand-written propagation tables on the cards to allow for rapid comparison of techniques on identical taxa. Older physical cards whose data was considered ‘captured’ were often reused as scrap, preserving only the most critical propagation outcomes.</p>
-<p>Today, while modern propagation data was eventually digitized (utilizing IrisBG since 2017), it is rarely entered directly into a computer on the spot. The Nursery is a messy, dusty environment where physical cards and pen annotations remain far more practical than screens. Furthermore, writing on the cards first provides a crucial audit trail. It allows multiple staff members to execute the physical work at the potting bench while centralizing the final database entry to maintain strict data hygiene. Even with modern systems in place, horticulturists reference these older paper cards when developing protocols to see what has worked in the past, and just as importantly, what hasn’t.</p>
-<p>Over time, these cards accumulate into something extraordinary: a complete record of what an institution has tried. They hold the craft knowledge of generations of horticulturists.</p>
-<div class="callout callout-style-simple callout-note">
-<div class="callout-body d-flex">
+<section id="what-you-need" class="level2">
+<h2 class="anchored" data-anchor-id="what-you-need">What you need</h2>
+<ul>
+<li><strong>A vision-capable LLM host</strong> — Ollama serving <code>qwen2.5vl:7b</code>. It can run on the same machine or another box on your network (point <code>--ollama</code> at it).</li>
+<li><strong>Your cards as PDFs</strong> — multi-page scans are fine; the tool splits them.</li>
+<li><strong>Accession exports (optional but recommended)</strong> — CSV exports from your collection system power the RAG taxonomy validation. The tool works without them, just with less cross-checking.</li>
+</ul>
+</section>
+<section id="cli-reference" class="level2">
+<h2 class="anchored" data-anchor-id="cli-reference">CLI reference</h2>
+<p><code>run.py</code> is the entry point:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 50%">
+<col style="width: 50%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Command</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>inventory --pdf-dir DIR</code></td>
+<td>Scan PDFs and build the card inventory</td>
+</tr>
+<tr class="even">
+<td><code>process --mode rag --dpi 175</code></td>
+<td>Process pending cards through the pipeline</td>
+</tr>
+<tr class="odd">
+<td><code>status</code></td>
+<td>Show processing progress</td>
+</tr>
+<tr class="even">
+<td><code>export -o out.csv</code></td>
+<td>Export extracted records to CSV</td>
+</tr>
+<tr class="odd">
+<td><code>failures [--retry]</code></td>
+<td>List or re-run failed cards</td>
+</tr>
+</tbody>
+</table>
+<p>See the repository’s <code>README.md</code> and <code>docs/</code> for full flags, the extraction schema, and card-layout field mappings.</p>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
 <i class="callout-icon"></i>
 </div>
-<div class="callout-body-container">
-<p><strong>The quiet crisis.</strong> When experienced propagation staff retire, their knowledge often leaves with them. The cards remain, but without context they become harder and harder to interpret. Eventually, someone decides they’re taking up space. Or a natural disaster removes the choice altogether.</p>
+<div class="callout-title-container flex-fill">
+Tip
 </div>
 </div>
+<div class="callout-body-container callout-body">
+<p>This was built for one garden’s archive but is meant to generalize. If you’re at another institution with a paper propagation archive, the pipeline is the starting point — get in touch via the <a href="https://github.com/Kkubeck/propagation-card-reader">GitHub repo</a>.</p>
 </div>
-</section>
-<section id="what-this-project-does" class="level2">
-<h2 class="anchored" data-anchor-id="what-this-project-does">What this project does</h2>
-<p>The Propagation Card Reader is a tool that takes scanned images of handwritten propagation cards and extracts structured data from them: species names, dates, treatments, outcomes, accession numbers. It turns paper into a searchable database.</p>
-<p>It does this using a vision language model, a type of software that can look at an image and describe what it sees, similar to how a person would read the card. The model runs entirely on a single laptop. No cloud service, no subscription, no per-page fee. The card images never leave the building.</p>
-</section>
-<section id="why-this-site-exists" class="level2">
-<h2 class="anchored" data-anchor-id="why-this-site-exists">Why this site exists</h2>
-<p>This is not just documentation for a piece of software. It is an attempt to explain, accessibly, the ideas behind the technology, and to tell the story of how it came together.</p>
-<p>If you work at a botanical garden and have never touched a line of code, start with <a href="./the-cards.html">The Cards</a>. You will recognize what you see.</p>
-<p>If you are curious about how a computer reads handwriting, <a href="./the-journey.html">The Journey</a> walks through three attempts to solve that problem, each one teaching something new.</p>
-<p>If you want to understand the technical concepts without a computer science degree, <a href="./concepts.html">How It All Works</a> explains things like “language model” and “answer space” using the cards as examples.</p>
-<p>If you want the numbers, go to <a href="./results.html">Results</a>. If you want to run it yourself, go to <a href="./use-it.html">Use It</a>.</p>
-<div class="mission-section">
-<p>Every botanical garden has knowledge locked in paper. Herbarium sheets, field notebooks, accession ledgers, propagation cards. The methods described here are not limited to one type of record or one institution. A laptop, a scanner, and an open-weight model: that is all it takes.</p>
-<p><a href="https://github.com/Kkubeck/propagation-card-reader" class="btn btn-outline-success">See the code on GitHub</a></p>
 </div>
 
 

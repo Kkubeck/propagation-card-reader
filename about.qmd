@@ -2,4 +2,53 @@
 title: "About"
 ---
 
-About this site
+## The project
+
+Propagation Card Reader began as a practical problem at the **UBC Botanical Garden Nursery**:
+there were decades of handwritten propagation cards holding hard-won horticultural
+knowledge—such as sowing dates, treatments, successes, and failures—but no realistic way
+to digitize them. Commercial OCR meant ongoing cloud costs and sending collection data
+off-site, while manual entry required staff time the Garden simply didn't have.
+
+The answer was to run a vision-language model locally. It is free, private, and adept enough
+at parsing messy handwriting to be genuinely useful. This approach was highly effective 
+because the knowledge on the cards utilizes a relatively restricted sublanguage, and portions
+of the expected OCR output—specifically accession numbers and taxon name associations—are
+already known and predictable.
+
+## The author
+
+Built by **Kevin Kubeck**, a horticulturist at UBC Botanical Garden with decades of propagation
+and plant-collection experience, alongside a self-taught background in Python, data science, and
+data tooling for conservation. 
+
+The first two versions of this project were built independently. This final iteration utilized an
+agentic coding workflow, leveraging Claude Opus 4.6 as an orchestrator and the local `openclaw`
+system as a harness.
+
+## Why local-first matters
+
+For a botanical garden, collection data can be highly sensitive, especially when it involves
+rare-species locations, provenance, and historical institutional records. Keeping the entire OCR
+pipeline on local hardware ensures the garden never has to trade privacy or budget for the 
+benefitsof digitization. That principle is the core motivation behind this tool.
+
+## License & code
+
+The project is open source on [GitHub](https://github.com/Kkubeck/propagation-card-reader).
+See the repository's `LICENSE` file for terms.
+
+## Acknowledgements
+
+This project rests entirely on the foundational work of the approximately 20 horticulturists,
+propagators, and nursery staff who meticulously recorded fifty years of plant propagation data
+at the **UBC Botanical Garden (UBCBG) Nursery**. Their daily dedication to the living collections
+made this digitization effort possible.
+
+I also extend my gratitude to the wider staff, administration, and volunteers of the UBC Botanical Garden,
+past and present, whose collective efforts over the last century have maintained the institution. 
+
+Finally, this tool relies heavily on the open-source community, particularly the developers of **Ollama**,
+**Qwen**, **Quarto**, and **PyMuPDF**. 
+
+**[See the full list of Nursery contributors and historical acknowledgements here.](acknowledgements.qmd)**

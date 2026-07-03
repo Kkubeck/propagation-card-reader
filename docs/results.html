@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>Propagation Card Reader</title>
+<title>Results – Propagation Card Reader</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -89,7 +89,7 @@ ul.task-list li input[type="checkbox"] {
           <div class="collapse navbar-collapse" id="navbarCollapse">
             <ul class="navbar-nav navbar-nav-scroll me-auto">
   <li class="nav-item">
-    <a class="nav-link active" href="./index.html" aria-current="page"> 
+    <a class="nav-link" href="./index.html"> 
 <span class="menu-text">Home</span></a>
   </li>  
   <li class="nav-item">
@@ -105,7 +105,7 @@ ul.task-list li input[type="checkbox"] {
 <span class="menu-text">How It All Works</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="./results.html"> 
+    <a class="nav-link active" href="./results.html" aria-current="page"> 
 <span class="menu-text">Results</span></a>
   </li>  
   <li class="nav-item">
@@ -131,22 +131,31 @@ ul.task-list li input[type="checkbox"] {
     </nav>
 </header>
 <!-- content -->
-<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-full page-navbar">
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
 <!-- sidebar -->
 <!-- margin-sidebar -->
-    
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#scale" id="toc-scale" class="nav-link active" data-scroll-target="#scale">Scale</a></li>
+  <li><a href="#accuracy" id="toc-accuracy" class="nav-link" data-scroll-target="#accuracy">Accuracy</a></li>
+  <li><a href="#honest-failure-modes" id="toc-honest-failure-modes" class="nav-link" data-scroll-target="#honest-failure-modes">Honest failure modes</a></li>
+  </ul>
+</nav>
+    </div>
 <!-- main -->
-<main class="content column-page" id="quarto-document-content">
+<main class="content" id="quarto-document-content">
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Propagation Card Reader</h1>
-<p class="subtitle lead">Reading 50 years of handwritten botanical knowledge, on a laptop.</p>
+<h1 class="title">Results</h1>
 </div>
 
 
 
-<div class="quarto-title-meta column-page">
+<div class="quarto-title-meta">
 
     
   
@@ -158,47 +167,96 @@ ul.task-list li input[type="checkbox"] {
 </header>
 
 
-<section id="someone-wrote-this-down-for-a-reason." class="level1 hero-title hero-section">
-<h1 class="hero-title">Someone wrote this down for a reason.</h1>
-<p>For more than fifty years, the people who grow plants for a botanical garden have been recording their processes on small paper cards. Every seed sown, every cutting stuck, every success and failure, written by hand and filed in a cabinet.</p>
-<p>Thousands of cards. Decades of knowledge. Sitting in drawers.</p>
-<p>This project reads them.</p>
+<blockquote class="blockquote">
+<p><strong>Status:</strong> the figures below are placeholders pending the final scoring run. Numbers will be pulled directly from <code>cards.db</code>, not hand-entered. Treat the bracketed values as TODOs.</p>
+</blockquote>
+<section id="scale" class="level2">
+<h2 class="anchored" data-anchor-id="scale">Scale</h2>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Metric</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Source PDFs processed</td>
+<td>514</td>
+</tr>
+<tr class="even">
+<td>Individual cards extracted</td>
+<td>~12,700</td>
+</tr>
+<tr class="odd">
+<td>Fields captured per card</td>
+<td>20</td>
+</tr>
+<tr class="even">
+<td>Hardware</td>
+<td>Apple Silicon Mac (M4, 24 GB), no internet</td>
+</tr>
+<tr class="odd">
+<td>Model</td>
+<td><code>qwen2.5vl:7b</code> via Ollama</td>
+</tr>
+<tr class="even">
+<td>Render resolution</td>
+<td>175 DPI</td>
+</tr>
+</tbody>
+</table>
 </section>
-<hr>
-<section id="what-are-propagation-cards" class="level2">
-<h2 class="anchored" data-anchor-id="what-are-propagation-cards">What are propagation cards?</h2>
-<p>Every plant production facility needs to document its processes, if only to make things more efficient the next time around. This documentation becomes critical when the “next time” is twenty years from now, and a completely different person is doing the work. At the UBCBG Nursery, we handle diverse and sometimes rare material that might never be collected again. Maximizing the probability of success is imperative.</p>
-<p>Historically, before digital databases, the “accession card” was the primary record of a plant’s existence in the Collection. These were printed in triplicate: the top copy accompanied the seed packet to the nursery, while the other two remained with the Collection Technician and the Curator. Because of this historical workflow, the terms “accession card” and “propagation card” are used interchangeably in this project.</p>
-<p>The card follows that material through every physical step at the Nursery: sowing, treatment, germination, transplanting. The original intent was that each card act as a single observation of a single accession, handwritten by the person doing the work. Over the decades, as cards piled up, workers took to condensing the information. They created hand-written propagation tables on the cards to allow for rapid comparison of techniques on identical taxa. Older physical cards whose data was considered ‘captured’ were often reused as scrap, preserving only the most critical propagation outcomes.</p>
-<p>Today, while modern propagation data was eventually digitized (utilizing IrisBG since 2017), it is rarely entered directly into a computer on the spot. The Nursery is a messy, dusty environment where physical cards and pen annotations remain far more practical than screens. Furthermore, writing on the cards first provides a crucial audit trail. It allows multiple staff members to execute the physical work at the potting bench while centralizing the final database entry to maintain strict data hygiene. Even with modern systems in place, horticulturists reference these older paper cards when developing protocols to see what has worked in the past, and just as importantly, what hasn’t.</p>
-<p>Over time, these cards accumulate into something extraordinary: a complete record of what an institution has tried. They hold the craft knowledge of generations of horticulturists.</p>
-<div class="callout callout-style-simple callout-note">
-<div class="callout-body d-flex">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
-</div>
-<div class="callout-body-container">
-<p><strong>The quiet crisis.</strong> When experienced propagation staff retire, their knowledge often leaves with them. The cards remain, but without context they become harder and harder to interpret. Eventually, someone decides they’re taking up space. Or a natural disaster removes the choice altogether.</p>
-</div>
-</div>
-</div>
+<section id="accuracy" class="level2">
+<h2 class="anchored" data-anchor-id="accuracy">Accuracy</h2>
+<blockquote class="blockquote">
+<p><em>(Placeholder — fill from the scored sample.)</em></p>
+</blockquote>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Field group</th>
+<th>Cards scored</th>
+<th>Field-level accuracy</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Accession number</td>
+<td>[N]</td>
+<td>[xx]%</td>
+</tr>
+<tr class="even">
+<td>Taxon name</td>
+<td>[N]</td>
+<td>[xx]%</td>
+</tr>
+<tr class="odd">
+<td>Dates</td>
+<td>[N]</td>
+<td>[xx]%</td>
+</tr>
+<tr class="even">
+<td>Treatment / notes</td>
+<td>[N]</td>
+<td>[xx]%</td>
+</tr>
+</tbody>
+</table>
+<p>The earlier prototype (Google Cloud Vision + template matching) reached roughly <strong>90–98%</strong> on the fields it targeted — useful as a reference point, though it required cloud calls and far narrower scope.</p>
 </section>
-<section id="what-this-project-does" class="level2">
-<h2 class="anchored" data-anchor-id="what-this-project-does">What this project does</h2>
-<p>The Propagation Card Reader is a tool that takes scanned images of handwritten propagation cards and extracts structured data from them: species names, dates, treatments, outcomes, accession numbers. It turns paper into a searchable database.</p>
-<p>It does this using a vision language model, a type of software that can look at an image and describe what it sees, similar to how a person would read the card. The model runs entirely on a single laptop. No cloud service, no subscription, no per-page fee. The card images never leave the building.</p>
-</section>
-<section id="why-this-site-exists" class="level2">
-<h2 class="anchored" data-anchor-id="why-this-site-exists">Why this site exists</h2>
-<p>This is not just documentation for a piece of software. It is an attempt to explain, accessibly, the ideas behind the technology, and to tell the story of how it came together.</p>
-<p>If you work at a botanical garden and have never touched a line of code, start with <a href="./the-cards.html">The Cards</a>. You will recognize what you see.</p>
-<p>If you are curious about how a computer reads handwriting, <a href="./the-journey.html">The Journey</a> walks through three attempts to solve that problem, each one teaching something new.</p>
-<p>If you want to understand the technical concepts without a computer science degree, <a href="./concepts.html">How It All Works</a> explains things like “language model” and “answer space” using the cards as examples.</p>
-<p>If you want the numbers, go to <a href="./results.html">Results</a>. If you want to run it yourself, go to <a href="./use-it.html">Use It</a>.</p>
-<div class="mission-section">
-<p>Every botanical garden has knowledge locked in paper. Herbarium sheets, field notebooks, accession ledgers, propagation cards. The methods described here are not limited to one type of record or one institution. A laptop, a scanner, and an open-weight model: that is all it takes.</p>
-<p><a href="https://github.com/Kkubeck/propagation-card-reader" class="btn btn-outline-success">See the code on GitHub</a></p>
-</div>
+<section id="honest-failure-modes" class="level2">
+<h2 class="anchored" data-anchor-id="honest-failure-modes">Honest failure modes</h2>
+<p>Credibility comes from naming what doesn’t work:</p>
+<ul>
+<li><strong>Condensed multi-sowing tables</strong> — the hardest case; several accessions on one card, easy to merge or drop rows.</li>
+<li><strong>Faded carbon copies</strong> — low-contrast old cards degrade transcription.</li>
+<li><strong>Ambiguous handwriting on accession digits</strong> — a single misread digit produces a plausible-but-wrong accession; the RAG validation step catches many but not all of these.</li>
+<li><strong>No-accession cards</strong> — pre-2012 failed sowings rely on taxon-name matching, which inherits any error in the taxon transcription.</li>
+</ul>
+<blockquote class="blockquote">
+<p><em>(Placeholder — add 2–3 example failure cards from <code>data/failed-card-samples/</code> with a one-line note on each, once cleared for public sharing.)</em></p>
+</blockquote>
 
 
 </section>

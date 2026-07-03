@@ -1,20 +1,49 @@
 project:
   type: website
-  output-dir: docs 
+  output-dir: docs
+  render:
+    - index.qmd
+    - the-cards.qmd
+    - the-journey.qmd
+    - concepts.qmd
+    - results.qmd
+    - use-it.qmd
+    - about.qmd
+
+execute:
+  enabled: false
 
 website:
   title: "Propagation Card Reader"
+  description: "Reading 50 years of handwritten botanical knowledge, on a laptop."
   navbar:
+    background: "#1a2e1a"
+    foreground: "#f0ead6"
     left:
       - href: index.qmd
         text: Home
+      - href: the-cards.qmd
+        text: The Cards
+      - href: the-journey.qmd
+        text: The Journey
+      - href: concepts.qmd
+        text: How It All Works
+      - href: results.qmd
+        text: Results
+      - href: use-it.qmd
+        text: Use It
       - href: about.qmd
         text: About
+    right:
+      - icon: github
+        href: https://github.com/Kkubeck/propagation-card-reader
+        aria-label: GitHub
   page-footer:
     right: "Built with [Quarto](https://quarto.org/)"
-    left: "&copy; Copyright 2025, Kevin Kubeck"
+    left: "Kevin Kubeck"
 
 format:
   html:
     theme: cosmo
     css: styles.css
+    toc: true

@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>Propagation Card Reader</title>
+<title>How It All Works – Propagation Card Reader</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -89,7 +89,7 @@ ul.task-list li input[type="checkbox"] {
           <div class="collapse navbar-collapse" id="navbarCollapse">
             <ul class="navbar-nav navbar-nav-scroll me-auto">
   <li class="nav-item">
-    <a class="nav-link active" href="./index.html" aria-current="page"> 
+    <a class="nav-link" href="./index.html"> 
 <span class="menu-text">Home</span></a>
   </li>  
   <li class="nav-item">
@@ -101,7 +101,7 @@ ul.task-list li input[type="checkbox"] {
 <span class="menu-text">The Journey</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="./concepts.html"> 
+    <a class="nav-link active" href="./concepts.html" aria-current="page"> 
 <span class="menu-text">How It All Works</span></a>
   </li>  
   <li class="nav-item">
@@ -131,22 +131,49 @@ ul.task-list li input[type="checkbox"] {
     </nav>
 </header>
 <!-- content -->
-<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-full page-navbar">
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
 <!-- sidebar -->
 <!-- margin-sidebar -->
-    
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#the-basics" id="toc-the-basics" class="nav-link active" data-scroll-target="#the-basics">The Basics</a>
+  <ul class="collapse">
+  <li><a href="#what-is-a-model" id="toc-what-is-a-model" class="nav-link" data-scroll-target="#what-is-a-model">What is a model?</a></li>
+  <li><a href="#what-are-prompts-and-context" id="toc-what-are-prompts-and-context" class="nav-link" data-scroll-target="#what-are-prompts-and-context">What are prompts and context?</a></li>
+  </ul></li>
+  <li><a href="#the-hardware-reality" id="toc-the-hardware-reality" class="nav-link" data-scroll-target="#the-hardware-reality">The Hardware Reality</a>
+  <ul class="collapse">
+  <li><a href="#what-do-local-tokens-and-ram-mean" id="toc-what-do-local-tokens-and-ram-mean" class="nav-link" data-scroll-target="#what-do-local-tokens-and-ram-mean">What do “local”, “tokens”, and “RAM” mean?</a></li>
+  <li><a href="#the-dpi-trade-off" id="toc-the-dpi-trade-off" class="nav-link" data-scroll-target="#the-dpi-trade-off">The DPI Trade-off</a></li>
+  </ul></li>
+  <li><a href="#the-software-reality" id="toc-the-software-reality" class="nav-link" data-scroll-target="#the-software-reality">The Software Reality</a>
+  <ul class="collapse">
+  <li><a href="#what-are-open-weights" id="toc-what-are-open-weights" class="nav-link" data-scroll-target="#what-are-open-weights">What are “open weights”?</a></li>
+  </ul></li>
+  <li><a href="#the-processing-logic" id="toc-the-processing-logic" class="nav-link" data-scroll-target="#the-processing-logic">The Processing Logic</a>
+  <ul class="collapse">
+  <li><a href="#how-does-the-model-make-a-decision-decision-space-temperature" id="toc-how-does-the-model-make-a-decision-decision-space-temperature" class="nav-link" data-scroll-target="#how-does-the-model-make-a-decision-decision-space-temperature">How does the model make a decision? (Decision Space &amp; Temperature)</a></li>
+  <li><a href="#what-is-rag-and-retrieval-augmented-validation" id="toc-what-is-rag-and-retrieval-augmented-validation" class="nav-link" data-scroll-target="#what-is-rag-and-retrieval-augmented-validation">What is RAG and Retrieval-Augmented Validation?</a></li>
+  <li><a href="#what-is-post-processing" id="toc-what-is-post-processing" class="nav-link" data-scroll-target="#what-is-post-processing">What is post-processing?</a></li>
+  </ul></li>
+  </ul>
+</nav>
+    </div>
 <!-- main -->
-<main class="content column-page" id="quarto-document-content">
+<main class="content" id="quarto-document-content">
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Propagation Card Reader</h1>
-<p class="subtitle lead">Reading 50 years of handwritten botanical knowledge, on a laptop.</p>
+<h1 class="title">How It All Works</h1>
+<p class="subtitle lead">The ideas behind the technology, explained through the cards.</p>
 </div>
 
 
 
-<div class="quarto-title-meta column-page">
+<div class="quarto-title-meta">
 
     
   
@@ -158,49 +185,75 @@ ul.task-list li input[type="checkbox"] {
 </header>
 
 
-<section id="someone-wrote-this-down-for-a-reason." class="level1 hero-title hero-section">
-<h1 class="hero-title">Someone wrote this down for a reason.</h1>
-<p>For more than fifty years, the people who grow plants for a botanical garden have been recording their processes on small paper cards. Every seed sown, every cutting stuck, every success and failure, written by hand and filed in a cabinet.</p>
-<p>Thousands of cards. Decades of knowledge. Sitting in drawers.</p>
-<p>This project reads them.</p>
+<p>This page explains the technical concepts used by the Propagation Card Reader. Each concept is introduced through a concrete example from the project itself. No prior technical knowledge is assumed.</p>
+<section id="the-basics" class="level2">
+<h2 class="anchored" data-anchor-id="the-basics">The Basics</h2>
+<section id="what-is-a-model" class="level3">
+<h3 class="anchored" data-anchor-id="what-is-a-model">What is a model?</h3>
+<p>In this context, a “model” is a piece of software that has learned patterns from examples. Think of it like a new staff member who has read millions of documents on their first day. They have never seen your specific documents, in this case decades of propagation cards, but they have a general sense of what handwriting looks like, what dates look like, and even what Latin species names might look like.</p>
+<p>When you show the model a card image, it draws on that general knowledge to produce a transcription. It is not following a set of rules someone wrote (“if you see ink marks in the top-left corner, that is the species name”). It is recognizing patterns it has seen before in other contexts and applying them to something new.</p>
 </section>
+<section id="what-are-prompts-and-context" class="level3">
+<h3 class="anchored" data-anchor-id="what-are-prompts-and-context">What are prompts and context?</h3>
+<p>Before the model attempts to read a card, it receives a <strong>prompt</strong>. This is a set of specific instructions that guides its focus. Instead of just asking “what does this say?”, the prompt injects expected information, essentially telling the model: “You are looking at a botanical record; expect to find a taxon name and an accession number. What does this say?”</p>
+<p>This allows the model to leverage <strong>context</strong>. Traditional OCR (optical character recognition) looks at characters in isolation: a shape is either a “C” or a “G.” A Vision Language Model (VLM) looks at the entire image and surrounding words. If an ink smudge makes a letter ambiguous, but the surrounding letters are “O T O N E A S T E R”, the VLM uses its understanding of botanical sublanguage to definitively read <em>Cotoneaster</em>. It uses context to read the card more like a person would.</p>
+</section>
+</section>
+<section id="the-hardware-reality" class="level2">
+<h2 class="anchored" data-anchor-id="the-hardware-reality">The Hardware Reality</h2>
+<section id="what-do-local-tokens-and-ram-mean" class="level3">
+<h3 class="anchored" data-anchor-id="what-do-local-tokens-and-ram-mean">What do “local”, “tokens”, and “RAM” mean?</h3>
+<p>When we say the model runs “locally,” we mean it runs entirely on the physical computer sitting in front of you—perhaps a repurposed desktop node acting as the system’s brain. The card images are never uploaded to the internet.</p>
+<p>This is the opposite of a cloud service, where data is sent to a massive enterprise data center. Cloud models are incredibly fast, but they charge you per <strong>token</strong> (the fundamental chunks of words a model reads and generates). When running locally, your token cost is zero; you only pay the amortized cost of the hardware and the electricity required to run it.</p>
+<p>For a botanical garden, local processing ensures sensitive collection records such as rare species coordinates or donor names remain private. But it comes with a physical limit: <strong>RAM</strong> (Random Access Memory).</p>
+<p>Enterprise cloud models expand across vast arrays of memory. A local machine has a fixed amount of unified memory. To work locally, the entire model must fit inside your machine’s RAM all at once. This requires us to use highly efficient models rather than the massive, resource-heavy versions used by big tech companies.</p>
+</section>
+<section id="the-dpi-trade-off" class="level3">
+<h3 class="anchored" data-anchor-id="the-dpi-trade-off">The DPI Trade-off</h3>
+<p>DPI stands for dots per inch, measuring how detailed a scanned image is. A higher DPI means more detail, which usually helps the model read finer handwriting.</p>
+<p>However, because of the RAM limits on ‘local’ machines there is a strict trade-off. An image scanned at a high DPI creates a much larger file that takes up significant space in the machine’s unified memory. The larger the image footprint, the smaller the model we are forced to use to avoid running out of RAM.</p>
+<p>The project settled on 150-175 DPI as the sweet spot: it provides enough detail to accurately read the handwriting while leaving enough memory free for a sufficiently smart model to do the heavy lifting.</p>
+<blockquote class="blockquote">
+<p><em>(Placeholder: side-by-side comparison of the same card at 100, 150, and 200 DPI, showing the legibility difference.)</em></p>
+</blockquote>
+</section>
+</section>
+<section id="the-software-reality" class="level2">
+<h2 class="anchored" data-anchor-id="the-software-reality">The Software Reality</h2>
+<section id="what-are-open-weights" class="level3">
+<h3 class="anchored" data-anchor-id="what-are-open-weights">What are “open weights”?</h3>
+<p>The model used in this project (Qwen 2.5-VL) is described as “open-weight.” This means that the learned parameters, those are the patterns the model extracted from its training data, are freely available for anyone to download and use. You do not need to pay a subscription, sign a license agreement, or use a specific company’s platform.</p>
+<p>This open nature is what makes the foundation of the tool portable. If another botanical garden wants to read their own cards, they can download the same model and run it on their own hardware.</p>
+<p>However, it is not entirely “plug and play.” Because the system relies heavily on context, another institution would need to do two things to make it work for their records: 1. <strong>Personalize the prompts:</strong> The instructions must be adjusted to understand the specific layout and sublanguage of their garden’s cards as the current tool is highly tuned to UBCBG’s format. 2. <strong>Provide local data:</strong> They must supply their own internal collection reports. Specifically the database mapping their accession numbers to taxon names. This powers the Retrieval-Augmented Validation step.</p>
+</section>
+</section>
+<section id="the-processing-logic" class="level2">
+<h2 class="anchored" data-anchor-id="the-processing-logic">The Processing Logic</h2>
+<section id="how-does-the-model-make-a-decision-decision-space-temperature" class="level3">
+<h3 class="anchored" data-anchor-id="how-does-the-model-make-a-decision-decision-space-temperature">How does the model make a decision? (Decision Space &amp; Temperature)</h3>
+<p>Under the hood, a model doesn’t “read” in the human sense; it calculates mathematical probabilities. For every token it generates, it assigns a probability score to what the next token should be. The range of all possible valid interpretations it considers is its <strong>decision space</strong>.</p>
+<p>We can influence this math using a setting called <strong>temperature</strong>. A low temperature forces the model to be strict, always picking the single most mathematically probable token. A slightly higher temperature allows it to explore other highly probable paths within the decision space.</p>
+<p>This is why a faded, ambiguous card might fail on the first attempt, but succeed on the second. By running the same card multiple times, we sample different paths through the decision space. While there are diminishing returns, eventually the model has exhausted its best guesses during repeated attempts, tending to mathematically <strong>converge</strong> on the correct answer.</p>
+<blockquote class="blockquote">
+<p><em>(Placeholder: visualization showing answer space convergence across retries for a sample set of cards. A chart showing how the distribution of outputs narrows with repeated attempts.)</em></p>
+</blockquote>
+</section>
+<section id="what-is-rag-and-retrieval-augmented-validation" class="level3">
+<h3 class="anchored" data-anchor-id="what-is-rag-and-retrieval-augmented-validation">What is RAG and Retrieval-Augmented Validation?</h3>
+<p>RAG stands for Retrieval-Augmented Generation. In plain terms, it means giving the model a reference sheet to check its work against.</p>
+<p>In this project, because the Garden already has a database of every known accession number and recorded species name in its history, we can inject this data into the process. We use a specific technique called <strong>Retrieval-Augmented Validation (RAV)</strong>. When the model reads “Acer macrophyllum,” the system instantly checks that reading against the internal database. If it exists, confidence goes up. If the model reads “Acer macrophylllm” (three L’s), the system catches the likely typo and flags it.</p>
+</section>
+<section id="what-is-post-processing" class="level3">
+<h3 class="anchored" data-anchor-id="what-is-post-processing">What is post-processing?</h3>
+<p>The model reads, but the code checks. Post-processing is the secondary layer of code that takes the model’s raw transcription and standardizes it strictly to the Nursery’s sublanguage. It formats the dates, extracts the verified accession numbers, and filters out noise (like geographic coordinates or source codes that might look like accession numbers but aren’t).</p>
+<p>Splitting the model’s probabilistic “guessing” from the code’s rigid “checking” is a crucial design decision. It lets each part focus on what it does best.</p>
 <hr>
-<section id="what-are-propagation-cards" class="level2">
-<h2 class="anchored" data-anchor-id="what-are-propagation-cards">What are propagation cards?</h2>
-<p>Every plant production facility needs to document its processes, if only to make things more efficient the next time around. This documentation becomes critical when the “next time” is twenty years from now, and a completely different person is doing the work. At the UBCBG Nursery, we handle diverse and sometimes rare material that might never be collected again. Maximizing the probability of success is imperative.</p>
-<p>Historically, before digital databases, the “accession card” was the primary record of a plant’s existence in the Collection. These were printed in triplicate: the top copy accompanied the seed packet to the nursery, while the other two remained with the Collection Technician and the Curator. Because of this historical workflow, the terms “accession card” and “propagation card” are used interchangeably in this project.</p>
-<p>The card follows that material through every physical step at the Nursery: sowing, treatment, germination, transplanting. The original intent was that each card act as a single observation of a single accession, handwritten by the person doing the work. Over the decades, as cards piled up, workers took to condensing the information. They created hand-written propagation tables on the cards to allow for rapid comparison of techniques on identical taxa. Older physical cards whose data was considered ‘captured’ were often reused as scrap, preserving only the most critical propagation outcomes.</p>
-<p>Today, while modern propagation data was eventually digitized (utilizing IrisBG since 2017), it is rarely entered directly into a computer on the spot. The Nursery is a messy, dusty environment where physical cards and pen annotations remain far more practical than screens. Furthermore, writing on the cards first provides a crucial audit trail. It allows multiple staff members to execute the physical work at the potting bench while centralizing the final database entry to maintain strict data hygiene. Even with modern systems in place, horticulturists reference these older paper cards when developing protocols to see what has worked in the past, and just as importantly, what hasn’t.</p>
-<p>Over time, these cards accumulate into something extraordinary: a complete record of what an institution has tried. They hold the craft knowledge of generations of horticulturists.</p>
-<div class="callout callout-style-simple callout-note">
-<div class="callout-body d-flex">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
-</div>
-<div class="callout-body-container">
-<p><strong>The quiet crisis.</strong> When experienced propagation staff retire, their knowledge often leaves with them. The cards remain, but without context they become harder and harder to interpret. Eventually, someone decides they’re taking up space. Or a natural disaster removes the choice altogether.</p>
-</div>
-</div>
-</div>
-</section>
-<section id="what-this-project-does" class="level2">
-<h2 class="anchored" data-anchor-id="what-this-project-does">What this project does</h2>
-<p>The Propagation Card Reader is a tool that takes scanned images of handwritten propagation cards and extracts structured data from them: species names, dates, treatments, outcomes, accession numbers. It turns paper into a searchable database.</p>
-<p>It does this using a vision language model, a type of software that can look at an image and describe what it sees, similar to how a person would read the card. The model runs entirely on a single laptop. No cloud service, no subscription, no per-page fee. The card images never leave the building.</p>
-</section>
-<section id="why-this-site-exists" class="level2">
-<h2 class="anchored" data-anchor-id="why-this-site-exists">Why this site exists</h2>
-<p>This is not just documentation for a piece of software. It is an attempt to explain, accessibly, the ideas behind the technology, and to tell the story of how it came together.</p>
-<p>If you work at a botanical garden and have never touched a line of code, start with <a href="./the-cards.html">The Cards</a>. You will recognize what you see.</p>
-<p>If you are curious about how a computer reads handwriting, <a href="./the-journey.html">The Journey</a> walks through three attempts to solve that problem, each one teaching something new.</p>
-<p>If you want to understand the technical concepts without a computer science degree, <a href="./concepts.html">How It All Works</a> explains things like “language model” and “answer space” using the cards as examples.</p>
-<p>If you want the numbers, go to <a href="./results.html">Results</a>. If you want to run it yourself, go to <a href="./use-it.html">Use It</a>.</p>
-<div class="mission-section">
-<p>Every botanical garden has knowledge locked in paper. Herbarium sheets, field notebooks, accession ledgers, propagation cards. The methods described here are not limited to one type of record or one institution. A laptop, a scanner, and an open-weight model: that is all it takes.</p>
-<p><a href="https://github.com/Kkubeck/propagation-card-reader" class="btn btn-outline-success">See the code on GitHub</a></p>
-</div>
+<p>These concepts are not unique to propagation cards. The same ideas apply to any institution sitting on paper records: herbarium sheets, field notebooks, accession ledgers, library archives. The technology is general. The application here is specific, but the principles transfer.</p>
+<hr>
+<p>Next: <a href="./results.html">Results</a>, what the pipeline actually produced.</p>
 
 
+</section>
 </section>
 
 </main> <!-- /main -->

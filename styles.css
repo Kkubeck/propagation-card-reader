@@ -1,0 +1,80 @@
+/* Propagation Card Reader site styles */
+
+/* ── Base ── */
+.page-columns {
+  --bs-body-font-size: 1.04rem;
+}
+
+body {
+  line-height: 1.7;
+}
+
+/* ── Hero section (index page) ── */
+.hero-section {
+  background: linear-gradient(135deg, #1a2e1a 0%, #2d4a2d 50%, #1a2e1a 100%);
+  color: #f0ead6;
+  padding: 3rem 2rem;
+  border-radius: 8px;
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+.hero-title {
+  color: #f0ead6 !important;
+  font-size: 2rem;
+  margin-bottom: 1rem;
+}
+
+.hero-section p {
+  font-size: 1.1rem;
+  max-width: 700px;
+  margin: 0.5rem auto;
+  opacity: 0.9;
+}
+
+/* ── Mission section (index page) ── */
+.mission-section {
+  background: #f8f9f0;
+  border-left: 4px solid #2d4a2d;
+  padding: 1.5rem 2rem;
+  border-radius: 0 8px 8px 0;
+  margin-top: 2rem;
+}
+
+/* ── Callout styling ── */
+.callout-tip {
+  border-left-color: #2d4a2d !important;
+}
+
+/* ── Tables ── */
+table {
+  font-size: 0.95rem;
+}
+
+th {
+  background: #f8f9f0;
+}
+
+/* ── Pipeline ASCII block ── */
+pre {
+  font-size: 0.85rem;
+}
+
+/* ── Blockquotes (placeholder notes) ── */
+blockquote {
+  border-left: 3px solid #ccc;
+  color: #888;
+  font-style: italic;
+  padding: 0.5rem 1rem;
+  margin: 1rem 0;
+}
+
+/* ── Navigation ── */
+.navbar {
+  font-weight: 500;
+}
+
+/* ── Inline code used as status badges ── */
+code {
+  font-size: 0.85rem;
+}

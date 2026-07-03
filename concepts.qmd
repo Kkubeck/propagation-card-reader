@@ -1,0 +1,165 @@
+---
+title: "How It All Works"
+subtitle: "The ideas behind the technology, explained through the cards."
+---
+
+This page explains the technical concepts used by the Propagation Card Reader.
+Each concept is introduced through a concrete example from the project itself.
+No prior technical knowledge is assumed.
+
+## The Basics
+
+### What is a model?
+
+In this context, a "model" is a piece of software that has learned patterns 
+from examples. Think of it like a new staff member who has read millions of 
+documents on their first day. They have never seen your specific documents, in 
+this case decades of propagation cards, but they have a general sense of what 
+handwriting looks like, what dates look like, and even what Latin species names
+might look like.
+
+When you show the model a card image, it draws on that general knowledge to 
+produce a transcription. It is not following a set of rules someone wrote 
+("if you see ink marks in the top-left corner, that is the species name"). 
+It is recognizing patterns it has seen before in other contexts and applying them
+to something new.
+
+### What are prompts and context?
+
+Before the model attempts to read a card, it receives a **prompt**. This is a set 
+of specific instructions that guides its focus. Instead of just asking 
+"what does this say?",
+the prompt injects expected information, essentially telling the model: 
+"You are looking at a botanical record; expect to find a taxon name and an
+accession number. What does this say?"
+
+This allows the model to leverage **context**. Traditional OCR (optical character
+recognition) looks at characters in isolation: a shape is either a "C" or a "G." 
+A Vision Language Model (VLM) looks at the entire image and surrounding words.
+If an ink smudge makes a letter ambiguous, but the surrounding letters are 
+"O T O N E A S T E R", the VLM uses its understanding of botanical sublanguage 
+to definitively read *Cotoneaster*. It uses context to read the card more like a
+person would.
+
+## The Hardware Reality
+
+### What do "local", "tokens", and "RAM" mean?
+
+When we say the model runs "locally," we mean it runs entirely on the physical 
+computer sitting in front of you—perhaps a repurposed desktop node acting as the
+system's brain. The card images are never uploaded to the internet. 
+
+This is the opposite of a cloud service, where data is sent to a massive enterprise
+data center. Cloud models are incredibly fast, but they charge you per **token**
+(the fundamental chunks of words a model reads and generates). When running locally,
+your token cost is zero; you only pay the amortized cost of the hardware and the
+electricity required to run it.
+
+For a botanical garden, local processing ensures sensitive collection records such
+as rare species coordinates or donor names remain private. But it comes with a 
+physical limit: **RAM** (Random Access Memory). 
+
+Enterprise cloud models expand across vast arrays of memory. A local machine has
+a fixed amount of unified memory. To work locally, the entire model must fit inside
+your machine's RAM all at once. This requires us to use highly efficient models
+rather than the massive, resource-heavy versions used by big tech companies.
+
+### The DPI Trade-off
+
+DPI stands for dots per inch, measuring how detailed a scanned image is.
+A higher DPI means more detail, which usually helps the model read finer
+handwriting.
+
+However, because of the RAM limits on 'local' machines there is a strict trade-off.
+An image scanned at a high DPI creates a much larger file that takes up significant
+space in the machine's unified memory. The larger the image footprint, the smaller
+the model we are forced to use to avoid running out of RAM. 
+
+The project settled on 150-175 DPI as the sweet spot: it provides enough detail
+to accurately read the handwriting while leaving enough memory free for a
+sufficiently smart model to do the heavy lifting.
+
+> *(Placeholder: side-by-side comparison of the same card at 100, 150, and 200 DPI,
+showing the legibility difference.)*
+
+## The Software Reality
+
+### What are "open weights"?
+
+The model used in this project (Qwen 2.5-VL) is described as "open-weight."
+This means that the learned parameters, those are the patterns the model extracted from its
+training data, are freely available for anyone to download and use. You do not
+need to pay a subscription, sign a license agreement, or use a specific
+company's platform.
+
+This open nature is what makes the foundation of the tool portable. If another
+botanical garden wants to read their own cards, they can download the same
+model and run it on their own hardware. 
+
+However, it is not entirely "plug and play." Because the system relies 
+heavily on context, another institution would need to do two things to
+make it work for their records:
+1. **Personalize the prompts:** The instructions must be adjusted to understand
+the specific layout and sublanguage of their garden's cards as the current tool
+is highly tuned to UBCBG's format.
+2. **Provide local data:** They must supply their own internal collection reports.
+Specifically the database mapping their accession numbers to taxon names.
+This powers the Retrieval-Augmented Validation step.
+
+## The Processing Logic
+
+### How does the model make a decision? (Decision Space & Temperature)
+
+Under the hood, a model doesn't "read" in the human sense; it calculates
+mathematical probabilities. For every token it generates, it assigns a probability
+score to what the next token should be. The range of all possible valid
+interpretations it considers is its **decision space**.
+
+We can influence this math using a setting called **temperature**. A low
+temperature forces the model to be strict, always picking the single most
+mathematically probable token. A slightly higher temperature allows it to explore
+other highly probable paths within the decision space. 
+
+This is why a faded, ambiguous card might fail on the first attempt, but succeed
+on the second. By running the same card multiple times, we sample different
+paths through the decision space. While there are diminishing returns, eventually
+the model has exhausted its best guesses during repeated attempts, tending to mathematically
+**converge** on the correct answer.
+
+> *(Placeholder: visualization showing answer space convergence across retries
+for a sample set of cards. A chart showing how the distribution of outputs 
+narrows with repeated attempts.)*
+
+### What is RAG and Retrieval-Augmented Validation?
+
+RAG stands for Retrieval-Augmented Generation. In plain terms, it means giving
+the model a reference sheet to check its work against.
+
+In this project, because the Garden already has a database of every known accession
+number and recorded species name in its history, we can inject this data into the 
+process. We use a specific technique called **Retrieval-Augmented Validation (RAV)**.
+When the model reads "Acer macrophyllum," the system instantly checks that reading
+against the internal database. If it exists, confidence goes up. If the model reads
+"Acer macrophylllm" (three L's), the system catches the likely typo and flags it. 
+
+### What is post-processing?
+
+The model reads, but the code checks. Post-processing is the secondary layer of code
+that takes the model's raw transcription and standardizes it strictly to the Nursery's
+sublanguage. It formats the dates, extracts the verified accession numbers, and 
+filters out noise (like geographic coordinates or source codes that might look like
+accession numbers but aren't). 
+
+Splitting the model's probabilistic "guessing" from the code's rigid "checking" is
+a crucial design decision. It lets each part focus on what it does best.
+
+---
+
+These concepts are not unique to propagation cards. The same ideas apply to any
+institution sitting on paper records: herbarium sheets, field notebooks, 
+accession ledgers, library archives. The technology is general. The application here
+is specific, but the principles transfer.
+
+---
+
+Next: [Results](results.qmd), what the pipeline actually produced.

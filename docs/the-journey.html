@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>Propagation Card Reader</title>
+<title>The Journey – Propagation Card Reader</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -89,7 +89,7 @@ ul.task-list li input[type="checkbox"] {
           <div class="collapse navbar-collapse" id="navbarCollapse">
             <ul class="navbar-nav navbar-nav-scroll me-auto">
   <li class="nav-item">
-    <a class="nav-link active" href="./index.html" aria-current="page"> 
+    <a class="nav-link" href="./index.html"> 
 <span class="menu-text">Home</span></a>
   </li>  
   <li class="nav-item">
@@ -97,7 +97,7 @@ ul.task-list li input[type="checkbox"] {
 <span class="menu-text">The Cards</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="./the-journey.html"> 
+    <a class="nav-link active" href="./the-journey.html" aria-current="page"> 
 <span class="menu-text">The Journey</span></a>
   </li>  
   <li class="nav-item">
@@ -131,22 +131,37 @@ ul.task-list li input[type="checkbox"] {
     </nav>
 </header>
 <!-- content -->
-<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-full page-navbar">
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
 <!-- sidebar -->
 <!-- margin-sidebar -->
-    
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#attempt-1-building-a-custom-pipeline-from-scratch" id="toc-attempt-1-building-a-custom-pipeline-from-scratch" class="nav-link active" data-scroll-target="#attempt-1-building-a-custom-pipeline-from-scratch">Attempt 1: Building a custom pipeline from scratch</a></li>
+  <li><a href="#attempt-2-cloud-apis-and-template-matching" id="toc-attempt-2-cloud-apis-and-template-matching" class="nav-link" data-scroll-target="#attempt-2-cloud-apis-and-template-matching">Attempt 2: Cloud APIs and template matching</a></li>
+  <li><a href="#attempt-3-local-vision-language-models" id="toc-attempt-3-local-vision-language-models" class="nav-link" data-scroll-target="#attempt-3-local-vision-language-models">Attempt 3: Local vision language models</a>
+  <ul class="collapse">
+  <li><a href="#the-virtue-of-patience" id="toc-the-virtue-of-patience" class="nav-link" data-scroll-target="#the-virtue-of-patience">The virtue of patience</a></li>
+  <li><a href="#splitting-the-labor" id="toc-splitting-the-labor" class="nav-link" data-scroll-target="#splitting-the-labor">Splitting the labor</a></li>
+  </ul></li>
+  <li><a href="#the-technological-arc" id="toc-the-technological-arc" class="nav-link" data-scroll-target="#the-technological-arc">The technological arc</a></li>
+  </ul>
+</nav>
+    </div>
 <!-- main -->
-<main class="content column-page" id="quarto-document-content">
+<main class="content" id="quarto-document-content">
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Propagation Card Reader</h1>
-<p class="subtitle lead">Reading 50 years of handwritten botanical knowledge, on a laptop.</p>
+<h1 class="title">The Journey</h1>
+<p class="subtitle lead">Three attempts to teach a computer to read handwriting.</p>
 </div>
 
 
 
-<div class="quarto-title-meta column-page">
+<div class="quarto-title-meta">
 
     
   
@@ -158,47 +173,130 @@ ul.task-list li input[type="checkbox"] {
 </header>
 
 
-<section id="someone-wrote-this-down-for-a-reason." class="level1 hero-title hero-section">
-<h1 class="hero-title">Someone wrote this down for a reason.</h1>
-<p>For more than fifty years, the people who grow plants for a botanical garden have been recording their processes on small paper cards. Every seed sown, every cutting stuck, every success and failure, written by hand and filed in a cabinet.</p>
-<p>Thousands of cards. Decades of knowledge. Sitting in drawers.</p>
-<p>This project reads them.</p>
-</section>
-<hr>
-<section id="what-are-propagation-cards" class="level2">
-<h2 class="anchored" data-anchor-id="what-are-propagation-cards">What are propagation cards?</h2>
-<p>Every plant production facility needs to document its processes, if only to make things more efficient the next time around. This documentation becomes critical when the “next time” is twenty years from now, and a completely different person is doing the work. At the UBCBG Nursery, we handle diverse and sometimes rare material that might never be collected again. Maximizing the probability of success is imperative.</p>
-<p>Historically, before digital databases, the “accession card” was the primary record of a plant’s existence in the Collection. These were printed in triplicate: the top copy accompanied the seed packet to the nursery, while the other two remained with the Collection Technician and the Curator. Because of this historical workflow, the terms “accession card” and “propagation card” are used interchangeably in this project.</p>
-<p>The card follows that material through every physical step at the Nursery: sowing, treatment, germination, transplanting. The original intent was that each card act as a single observation of a single accession, handwritten by the person doing the work. Over the decades, as cards piled up, workers took to condensing the information. They created hand-written propagation tables on the cards to allow for rapid comparison of techniques on identical taxa. Older physical cards whose data was considered ‘captured’ were often reused as scrap, preserving only the most critical propagation outcomes.</p>
-<p>Today, while modern propagation data was eventually digitized (utilizing IrisBG since 2017), it is rarely entered directly into a computer on the spot. The Nursery is a messy, dusty environment where physical cards and pen annotations remain far more practical than screens. Furthermore, writing on the cards first provides a crucial audit trail. It allows multiple staff members to execute the physical work at the potting bench while centralizing the final database entry to maintain strict data hygiene. Even with modern systems in place, horticulturists reference these older paper cards when developing protocols to see what has worked in the past, and just as importantly, what hasn’t.</p>
-<p>Over time, these cards accumulate into something extraordinary: a complete record of what an institution has tried. They hold the craft knowledge of generations of horticulturists.</p>
-<div class="callout callout-style-simple callout-note">
+<p>This project did not start with the solution it uses today. It went through three distinct attempts, each one a response to the limitations of the technology available at the time and a reflection of a steep personal learning curve.</p>
+<p>It would be inaccurate to view these methods as competing options; rather, they represent an evolution over time. When this work began, a site-specific custom pipeline was the only programmatic alternative to manually typing out data from all 12,000 cards one by one. Each subsequent iteration benefited from rapid advancements in machine learning frameworks and an increasing familiarity with modern coding tools.</p>
+<section id="attempt-1-building-a-custom-pipeline-from-scratch" class="level2">
+<h2 class="anchored" data-anchor-id="attempt-1-building-a-custom-pipeline-from-scratch">Attempt 1: Building a custom pipeline from scratch</h2>
+<p>The first idea was the most intuitive one. If a computer needs to read specific handwriting on specific forms, you build and train a system from scratch to do exactly that.</p>
+<p>Using classic data science libraries like <strong>scikit-learn</strong> and deep learning frameworks like <strong>PyTorch</strong>, this approach required manually segmenting images and painstakingly labeling training data character by character, line by line. The goal was to feed thousands of exact examples into a custom architecture so it could learn to map images of text to the actual characters they represented.</p>
+<p>The bottleneck here was <strong>variation</strong> paired with the sheer scale of manual labor required for a single person working in their spare time. The archive spans over fifty years and contains the handwriting of dozens of different staff members. Some entries are in typewriter text, others in crisp pen, still others are written in faint pencil, and a few are ghostly carbon copies.</p>
+<p>To make a custom PyTorch model robust enough to handle this level of noise, it required an impractical amount of manually labeled training data. Without it, the model simply could not generalize across different eras and handwriting styles.</p>
+<div class="callout callout-style-simple callout-tip">
 <div class="callout-body d-flex">
 <div class="callout-icon-container">
 <i class="callout-icon"></i>
 </div>
 <div class="callout-body-container">
-<p><strong>The quiet crisis.</strong> When experienced propagation staff retire, their knowledge often leaves with them. The cards remain, but without context they become harder and harder to interpret. Eventually, someone decides they’re taking up space. Or a natural disaster removes the choice altogether.</p>
+<p><strong>What this taught me.</strong> Custom training works beautifully when data is completely uniform. When data is historical, messy, and varied, you waste months labeling data just to get a model to recognize basic shapes. To avoid this, you need a model that already arrives with a general understanding of what writing looks like.</p>
 </div>
 </div>
 </div>
 </section>
-<section id="what-this-project-does" class="level2">
-<h2 class="anchored" data-anchor-id="what-this-project-does">What this project does</h2>
-<p>The Propagation Card Reader is a tool that takes scanned images of handwritten propagation cards and extracts structured data from them: species names, dates, treatments, outcomes, accession numbers. It turns paper into a searchable database.</p>
-<p>It does this using a vision language model, a type of software that can look at an image and describe what it sees, similar to how a person would read the card. The model runs entirely on a single laptop. No cloud service, no subscription, no per-page fee. The card images never leave the building.</p>
-</section>
-<section id="why-this-site-exists" class="level2">
-<h2 class="anchored" data-anchor-id="why-this-site-exists">Why this site exists</h2>
-<p>This is not just documentation for a piece of software. It is an attempt to explain, accessibly, the ideas behind the technology, and to tell the story of how it came together.</p>
-<p>If you work at a botanical garden and have never touched a line of code, start with <a href="./the-cards.html">The Cards</a>. You will recognize what you see.</p>
-<p>If you are curious about how a computer reads handwriting, <a href="./the-journey.html">The Journey</a> walks through three attempts to solve that problem, each one teaching something new.</p>
-<p>If you want to understand the technical concepts without a computer science degree, <a href="./concepts.html">How It All Works</a> explains things like “language model” and “answer space” using the cards as examples.</p>
-<p>If you want the numbers, go to <a href="./results.html">Results</a>. If you want to run it yourself, go to <a href="./use-it.html">Use It</a>.</p>
-<div class="mission-section">
-<p>Every botanical garden has knowledge locked in paper. Herbarium sheets, field notebooks, accession ledgers, propagation cards. The methods described here are not limited to one type of record or one institution. A laptop, a scanner, and an open-weight model: that is all it takes.</p>
-<p><a href="https://github.com/Kkubeck/propagation-card-reader" class="btn btn-outline-success">See the code on GitHub</a></p>
+<section id="attempt-2-cloud-apis-and-template-matching" class="level2">
+<h2 class="anchored" data-anchor-id="attempt-2-cloud-apis-and-template-matching">Attempt 2: Cloud APIs and template matching</h2>
+<p>The second approach offloaded the core problem of character recognition to a mature, external platform. The logical next step was to leverage a cloud-based commercial service.</p>
+<p>Google Cloud Vision provided a powerful solution for raw text extraction. The workflow relied on two integrated steps:</p>
+<ol type="1">
+<li><strong>Cloud extraction.</strong> Send each card image to the cloud API to receive the raw text strings along with their exact pixel coordinates on the card.</li>
+<li><strong>Template matching.</strong> Write custom code that used those coordinates to map text back to structured fields based on the physical layout of the card (e.g., if text is found within these specific boundary coordinates, it must be the accession number).</li>
+</ol>
+<p>This strategy yielded highly readable text outputs. The cloud engine handled handwriting variations with ease because it was built upon the exact deep-learning principles experimented with in Attempt 1, but scaled across billions of data points.</p>
+<p>However, the approach was ultimately abandoned due to institutional reality. Processing thousands of records would have meant sending sensitive institutional collection data, including wild-collection provenance and donor details, to external corporate servers. It became clear that navigating data sovereignty and securing institutional approval for off-site processing was a massive hurdle. Furthermore, template matching proved exceptionally brittle. The moment a horticulturist wrote outside the margins or built a condensed propagation table, the rigid spatial template broke entirely.</p>
+<div class="callout callout-style-simple callout-tip">
+<div class="callout-body d-flex">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
 </div>
+<div class="callout-body-container">
+<p><strong>What this taught me.</strong> General-purpose models solve the handwriting barrier, but cloud dependencies introduce issues with data sovereignty, subscription fees, and corporate reliance. For an institution prioritizing data privacy and long-term autonomy, cloud-only pipelines are frequently a non-starter.</p>
+</div>
+</div>
+</div>
+</section>
+<section id="attempt-3-local-vision-language-models" class="level2">
+<h2 class="anchored" data-anchor-id="attempt-3-local-vision-language-models">Attempt 3: Local vision language models</h2>
+<p>The current iteration of this project is cutting-edge, utilizing tools and architectures that did not exist even a year ago. The convergence of open-weight vision models, local execution engines like <strong>Ollama</strong>, local computing nodes, and advanced agentic development tools over the past 12 months has fundamentally changed what is possible on ordinary hardware. I say this not as a boast but as a call to regular folks like myself: these techniques are now available to the masses.</p>
+<p>Instead of traditional OCR that looks at characters in isolation, a <strong>Vision Language Model (VLM)</strong> views the entire image holistically. It reads a propagation card much like a human archivist would: interpreting terms from context, parsing layout structure naturally, and outputting clean text.</p>
+<p>The engine behind this particular project is <strong>Qwen 2.5-VL</strong>, an open-weight model. Because it is open-weight, the model’s learned parameters are entirely portable and free to download. Served locally via Ollama, the entire pipeline processes data right at the workstation without an internet connection.</p>
+<p>It is worth noting that there is no strict adherence to this specific model. Other excellent vision models exist (such as the 12B parameters of Google’s Gemma series, or 14B models from Qwen). Early in this project, I attempted to use heavier 12B/14B models, but combining their massive size with the high-DPI scans required to read faded writing quickly overwhelmed my machine’s 24 GB of RAM. Qwen 2.5-VL struck the perfect balance for my hardware. I designed this as a “one and done” solution; the results are good enough that I expect never to have to run this archive again. However, other botanical gardens adapting this tool should absolutely experiment with newer, larger models if they have the hardware to support them.</p>
+<section id="the-virtue-of-patience" class="level3">
+<h3 class="anchored" data-anchor-id="the-virtue-of-patience">The virtue of patience</h3>
+<p>Running a multi-billion-parameter neural network locally on a desktop or a repurposed hardware node changes the performance dynamic. It is slower than a massive cloud data center.</p>
+<p>However, as horticulturists, we are intimately familiar with waiting. When you sow a seed, you don’t expect results overnight; we understand that complex systems take time to yield results. Local machine learning requires a similar mindset. The trade-off for absolute data sovereignty and zero operational cost is processing time. We are perfectly comfortable letting a local machine quietly run through the night, germinating structured data from cold pixels at its own steady pace.</p>
+</section>
+<section id="splitting-the-labor" class="level3">
+<h3 class="anchored" data-anchor-id="splitting-the-labor">Splitting the labor</h3>
+<p>To maximize accuracy on local hardware, the codebase splits the work into a two-part pipeline:</p>
+<ol type="1">
+<li><strong>The model reads.</strong> The VLM is instructed strictly to transcribe everything it sees as a faithful observer. It is not asked to format or interpret data during the vision pass, which preserves its full cognitive capacity for raw comprehension.</li>
+<li><strong>The code checks.</strong> A robust post-processing layer handles the rigid logic: formatting dates, isolating accession strings, and executing <strong>Retrieval-Augmented Validation (RAV)</strong> against internal collection reports to catch spelling errors or typos.</li>
+</ol>
+<div class="callout callout-style-simple callout-tip">
+<div class="callout-body d-flex">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-body-container">
+<p><strong>What this taught me.</strong> You do not need to build your own AI from scratch, nor do you need to pay for massive cloud infrastructure. A compact, open-weight model running locally can handle historical records beautifully if you divide the labor. Let the model do the probabilistic reading and let deterministic local code handle the structural verification.</p>
+</div>
+</div>
+</div>
+</section>
+</section>
+<section id="the-technological-arc" class="level2">
+<h2 class="anchored" data-anchor-id="the-technological-arc">The technological arc</h2>
+<p>Looking back across the entire development process reveals how the underlying paradigm has shifted:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 25%">
+<col style="width: 25%">
+<col style="width: 25%">
+<col style="width: 25%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Feature</th>
+<th>Attempt 1</th>
+<th>Attempt 2</th>
+<th>Attempt 3</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>Core Approach</strong></td>
+<td>Custom PyTorch Pipeline</td>
+<td>Cloud API + Coordinate Templates</td>
+<td>Local Vision Language Model</td>
+</tr>
+<tr class="even">
+<td><strong>Data Privacy</strong></td>
+<td>Local, but labor-intensive</td>
+<td>Cloud-dependent (data leaves site)</td>
+<td>Absolute (runs completely offline)</td>
+</tr>
+<tr class="odd">
+<td><strong>Layout Adaptability</strong></td>
+<td>Rigid</td>
+<td>Brittle (fails if text moves out of boxes)</td>
+<td>Holistic (understands complex margins/tables)</td>
+</tr>
+<tr class="even">
+<td><strong>Cost Structure</strong></td>
+<td>High cost in manual labeling time</td>
+<td>Recurring per-image API fees</td>
+<td>Free (amortized hardware &amp; electricity)</td>
+</tr>
+<tr class="odd">
+<td><strong>Development Feasibility</strong></td>
+<td>Required deep developer expertise</td>
+<td>Required cloud infrastructure setup</td>
+<td>Accelerated by modern local tools</td>
+</tr>
+</tbody>
+</table>
+<p>The evolution of this project mirrors a broader democratization of technology. The tools did not simply get more accurate; they became accessible enough for an environmental professional to build, deploy, and control locally within a nursery setting.</p>
+<hr>
+<p>Next: <a href="./concepts.html">How It All Works</a>, where the technical concepts behind each of these attempts are explained without assuming any prior knowledge.</p>
 
 
 </section>

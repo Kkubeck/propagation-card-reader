@@ -200,28 +200,63 @@
     "href": "results.html",
     "title": "Results",
     "section": "",
-    "text": "Status: the figures below are placeholders pending the final scoring run. Numbers will be pulled directly from cards.db, not hand-entered. Treat the bracketed values as TODOs."
+    "text": "The complete archive has been processed. Every propagation card in the collection, spanning roughly fifty years of nursery records, has been read by the pipeline.\n\n\n\nMetric\nValue\n\n\n\n\nSource PDFs processed\n513\n\n\nTotal cards extracted\n12,762\n\n\nSuccessfully processed\n12,557\n\n\nFailed or errored\n153\n\n\nExcluded (unpaired duplex pages)\n52\n\n\nSuccess rate\n98.8%\n\n\nFields captured per card\n22\n\n\nHardware\nApple Silicon Mac (M4, 24 GB), no internet\n\n\nModel\nqwen2.5vl:7b via Ollama\n\n\nRender resolution\n175 DPI\n\n\nAvg processing time per card\n55.8 seconds\n\n\nTotal processing time\n194.5 hours\n\n\n\nThe 153 failures were primarily empty model responses (117 JSON parse errors) and intermittent Ollama server errors (29). These are retryable, not architectural."
   },
   {
     "objectID": "results.html#scale",
     "href": "results.html#scale",
     "title": "Results",
-    "section": "Scale",
-    "text": "Scale\n\n\n\nMetric\nValue\n\n\n\n\nSource PDFs processed\n514\n\n\nIndividual cards extracted\n~12,700\n\n\nFields captured per card\n20\n\n\nHardware\nApple Silicon Mac (M4, 24 GB), no internet\n\n\nModel\nqwen2.5vl:7b via Ollama\n\n\nRender resolution\n175 DPI"
+    "section": "",
+    "text": "The complete archive has been processed. Every propagation card in the collection, spanning roughly fifty years of nursery records, has been read by the pipeline.\n\n\n\nMetric\nValue\n\n\n\n\nSource PDFs processed\n513\n\n\nTotal cards extracted\n12,762\n\n\nSuccessfully processed\n12,557\n\n\nFailed or errored\n153\n\n\nExcluded (unpaired duplex pages)\n52\n\n\nSuccess rate\n98.8%\n\n\nFields captured per card\n22\n\n\nHardware\nApple Silicon Mac (M4, 24 GB), no internet\n\n\nModel\nqwen2.5vl:7b via Ollama\n\n\nRender resolution\n175 DPI\n\n\nAvg processing time per card\n55.8 seconds\n\n\nTotal processing time\n194.5 hours\n\n\n\nThe 153 failures were primarily empty model responses (117 JSON parse errors) and intermittent Ollama server errors (29). These are retryable, not architectural."
+  },
+  {
+    "objectID": "results.html#card-types",
+    "href": "results.html#card-types",
+    "title": "Results",
+    "section": "Card types",
+    "text": "Card types\n\n\n\nType\nCount\n%\n\n\n\n\nSingle-face cards\n10,586\n83%\n\n\nDuplex (front and back)\n2,176\n17%\n\n\n\nThe 52 excluded cards come from duplex PDFs with odd page counts where front/back pairing was not possible."
+  },
+  {
+    "objectID": "results.html#field-completeness",
+    "href": "results.html#field-completeness",
+    "title": "Results",
+    "section": "Field completeness",
+    "text": "Field completeness\nNot every card has every field. Older cards have fewer printed headers. Failed sowings before roughly 2012 were never assigned accession numbers. The propagation text block, the most important field for downstream analysis, is present on 97% of cards.\n\n\n\nField\nFilled\n%\n\n\n\n\npropagation_text\n12,240\n97%\n\n\ndate_received\n11,519\n92%\n\n\nreceived_as (material type)\n11,512\n92%\n\n\nbotanical_name\n11,496\n92%\n\n\nfamily\n11,459\n91%\n\n\nwanted_for_area\n11,456\n91%\n\n\nquantity\n11,444\n91%\n\n\naccession_number\n10,759\n86%\n\n\npresent_location\n10,696\n85%\n\n\nmax_quantity\n10,554\n84%\n\n\nsource\n10,266\n82%\n\n\nsource_info\n9,474\n75%\n\n\nlabels_requested\n9,009\n72%\n\n\ncollection_info\n7,976\n64%\n\n\ngeocode\n7,907\n63%\n\n\ncurators_info\n5,016\n40%\n\n\ncollector_number\n4,765\n38%\n\n\ndistribution\n4,794\n38%\n\n\nother_number\n4,368\n35%\n\n\nparent_accession\n1,579\n13%"
+  },
+  {
+    "objectID": "results.html#material-types",
+    "href": "results.html#material-types",
+    "title": "Results",
+    "section": "Material types",
+    "text": "Material types\nThe received_as field records what material arrived at the nursery. Values are as transcribed from the cards, with minor case normalization applied here for readability.\n\n\n\nMaterial\nCount\n%\n\n\n\n\nSeed\n8,443\n67%\n\n\nUnrooted cuttings (URCU)\n2,032\n16%\n\n\nPlant (PLNT)\n252\n2%\n\n\nSoftwood/semi-hardwood cuttings\n240\n2%\n\n\nSpore\n66\n0.5%\n\n\nBulb\n41\n0.3%\n\n\nDivision\n23\n0.2%\n\n\nOther (budplates, scions, etc.)\n30\n0.2%\n\n\nNot recorded\n1,430\n11%"
+  },
+  {
+    "objectID": "results.html#accession-numbers",
+    "href": "results.html#accession-numbers",
+    "title": "Results",
+    "section": "Accession numbers",
+    "text": "Accession numbers\nThe pipeline extracted 14,571 accession number entries across all cards, resolving to 13,277 unique normalized accessions. Some cards reference multiple accessions (multi-sowing tables). The 14% of cards without an accession number are primarily pre-2012 failed sowings that were never assigned one.\n\n\n\nFormat\nCount\n%\n\n\n\n\nLegacy (pre-IrisBG)\n9,856\n68%\n\n\nUnknown/partial\n2,791\n19%\n\n\nModern (post-IrisBG)\n1,623\n11%\n\n\nModern item-level\n283\n2%"
+  },
+  {
+    "objectID": "results.html#rag-assisted-extraction",
+    "href": "results.html#rag-assisted-extraction",
+    "title": "Results",
+    "section": "RAG-assisted extraction",
+    "text": "RAG-assisted extraction\n92% of cards (11,524) received taxonomy hints from the RAG index during extraction, averaging 458 tokens of context per card with a retrieval latency of 14 ms. The RAG step provides the model with accession-to-taxon mappings from the institution’s database, improving accession number and botanical name accuracy without additional model calls."
   },
   {
     "objectID": "results.html#accuracy",
     "href": "results.html#accuracy",
     "title": "Results",
     "section": "Accuracy",
-    "text": "Accuracy\n\n(Placeholder — fill from the scored sample.)\n\n\n\n\nField group\nCards scored\nField-level accuracy\n\n\n\n\nAccession number\n[N]\n[xx]%\n\n\nTaxon name\n[N]\n[xx]%\n\n\nDates\n[N]\n[xx]%\n\n\nTreatment / notes\n[N]\n[xx]%\n\n\n\nThe earlier prototype (OpenCV alignment + Google Cloud Vision with dynamic template matching) reached roughly 90–98% on the fields it targeted, useful as a reference point, though it required cloud calls, an internet connection, and far narrower scope."
+    "text": "Accuracy\nField-level accuracy scoring against a manually reviewed sample has not yet been completed. The earlier prototype (OpenCV alignment + Google Cloud Vision with dynamic template matching) reached roughly 90-98% accuracy on the fields it targeted, useful as a reference point, though it required cloud calls, an internet connection, and far narrower scope.\nA formal accuracy assessment is planned: a stratified sample of cards (old vs. new, seed vs. cutting, single vs. multi-sowing) scored against ground-truth transcriptions."
   },
   {
     "objectID": "results.html#honest-failure-modes",
     "href": "results.html#honest-failure-modes",
     "title": "Results",
     "section": "Honest failure modes",
-    "text": "Honest failure modes\nCredibility comes from naming what doesn’t work:\n\nCondensed multi-sowing tables — the hardest case; several accessions on one card, easy to merge or drop rows.\nFaded carbon copies — low-contrast old cards degrade transcription.\nAmbiguous handwriting on accession digits — a single misread digit produces a plausible-but-wrong accession; the RAG validation step catches many but not all of these.\nNo-accession cards — pre-2012 failed sowings rely on taxon-name matching, which inherits any error in the taxon transcription.\n\n\n(Placeholder — add 2–3 example failure cards from data/failed-card-samples/ with a one-line note on each, once cleared for public sharing.)"
+    "text": "Honest failure modes\nCredibility comes from naming what doesn’t work:\n\nCondensed multi-sowing tables: the hardest case. Several accessions on one card in a hand-drawn table format. Easy to merge or drop rows. These represent approximately 17% of cards with unknown extraction outcomes.\nFaded carbon copies: low-contrast old cards (pre-1980s triplicates) degrade transcription quality.\nAmbiguous handwriting on accession digits: a single misread digit produces a plausible-but-wrong accession. The RAG validation step catches many of these, but not all.\nNo-accession cards: pre-2012 failed sowings rely on taxon-name matching, which inherits any error in the taxon transcription.\nFamily name case inconsistency: the model transcribes family names as written on the card, producing duplicates like “Ericaceae” and “ERICACEAE.” Normalizable in post-processing, but present in the raw output."
   },
   {
     "objectID": "about.html",

@@ -144,6 +144,11 @@ ul.task-list li input[type="checkbox"] {
    
   <ul>
   <li><a href="#scale" id="toc-scale" class="nav-link active" data-scroll-target="#scale">Scale</a></li>
+  <li><a href="#card-types" id="toc-card-types" class="nav-link" data-scroll-target="#card-types">Card types</a></li>
+  <li><a href="#field-completeness" id="toc-field-completeness" class="nav-link" data-scroll-target="#field-completeness">Field completeness</a></li>
+  <li><a href="#material-types" id="toc-material-types" class="nav-link" data-scroll-target="#material-types">Material types</a></li>
+  <li><a href="#accession-numbers" id="toc-accession-numbers" class="nav-link" data-scroll-target="#accession-numbers">Accession numbers</a></li>
+  <li><a href="#rag-assisted-extraction" id="toc-rag-assisted-extraction" class="nav-link" data-scroll-target="#rag-assisted-extraction">RAG-assisted extraction</a></li>
   <li><a href="#accuracy" id="toc-accuracy" class="nav-link" data-scroll-target="#accuracy">Accuracy</a></li>
   <li><a href="#honest-failure-modes" id="toc-honest-failure-modes" class="nav-link" data-scroll-target="#honest-failure-modes">Honest failure modes</a></li>
   </ul>
@@ -171,11 +176,9 @@ ul.task-list li input[type="checkbox"] {
 </header>
 
 
-<blockquote class="blockquote">
-<p><strong>Status:</strong> the figures below are placeholders pending the final scoring run. Numbers will be pulled directly from <code>cards.db</code>, not hand-entered. Treat the bracketed values as TODOs.</p>
-</blockquote>
 <section id="scale" class="level2">
 <h2 class="anchored" data-anchor-id="scale">Scale</h2>
+<p>The complete archive has been processed. Every propagation card in the collection, spanning roughly fifty years of nursery records, has been read by the pipeline.</p>
 <table class="caption-top table">
 <thead>
 <tr class="header">
@@ -186,15 +189,31 @@ ul.task-list li input[type="checkbox"] {
 <tbody>
 <tr class="odd">
 <td>Source PDFs processed</td>
-<td>514</td>
+<td>513</td>
 </tr>
 <tr class="even">
-<td>Individual cards extracted</td>
-<td>~12,700</td>
+<td>Total cards extracted</td>
+<td>12,762</td>
+</tr>
+<tr class="odd">
+<td>Successfully processed</td>
+<td>12,557</td>
+</tr>
+<tr class="even">
+<td>Failed or errored</td>
+<td>153</td>
+</tr>
+<tr class="odd">
+<td>Excluded (unpaired duplex pages)</td>
+<td>52</td>
+</tr>
+<tr class="even">
+<td><strong>Success rate</strong></td>
+<td><strong>98.8%</strong></td>
 </tr>
 <tr class="odd">
 <td>Fields captured per card</td>
-<td>20</td>
+<td>22</td>
 </tr>
 <tr class="even">
 <td>Hardware</td>
@@ -208,59 +227,272 @@ ul.task-list li input[type="checkbox"] {
 <td>Render resolution</td>
 <td>175 DPI</td>
 </tr>
+<tr class="odd">
+<td>Avg processing time per card</td>
+<td>55.8 seconds</td>
+</tr>
+<tr class="even">
+<td>Total processing time</td>
+<td>194.5 hours</td>
+</tr>
 </tbody>
 </table>
+<p>The 153 failures were primarily empty model responses (117 JSON parse errors) and intermittent Ollama server errors (29). These are retryable, not architectural.</p>
 </section>
-<section id="accuracy" class="level2">
-<h2 class="anchored" data-anchor-id="accuracy">Accuracy</h2>
-<blockquote class="blockquote">
-<p><em>(Placeholder — fill from the scored sample.)</em></p>
-</blockquote>
+<section id="card-types" class="level2">
+<h2 class="anchored" data-anchor-id="card-types">Card types</h2>
 <table class="caption-top table">
 <thead>
 <tr class="header">
-<th>Field group</th>
-<th>Cards scored</th>
-<th>Field-level accuracy</th>
+<th>Type</th>
+<th>Count</th>
+<th>%</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
-<td>Accession number</td>
-<td>[N]</td>
-<td>[xx]%</td>
+<td>Single-face cards</td>
+<td>10,586</td>
+<td>83%</td>
 </tr>
 <tr class="even">
-<td>Taxon name</td>
-<td>[N]</td>
-<td>[xx]%</td>
-</tr>
-<tr class="odd">
-<td>Dates</td>
-<td>[N]</td>
-<td>[xx]%</td>
-</tr>
-<tr class="even">
-<td>Treatment / notes</td>
-<td>[N]</td>
-<td>[xx]%</td>
+<td>Duplex (front and back)</td>
+<td>2,176</td>
+<td>17%</td>
 </tr>
 </tbody>
 </table>
-<p>The earlier prototype (OpenCV alignment + Google Cloud Vision with dynamic template matching) reached roughly <strong>90–98%</strong> on the fields it targeted, useful as a reference point, though it required cloud calls, an internet connection, and far narrower scope.</p>
+<p>The 52 excluded cards come from duplex PDFs with odd page counts where front/back pairing was not possible.</p>
+</section>
+<section id="field-completeness" class="level2">
+<h2 class="anchored" data-anchor-id="field-completeness">Field completeness</h2>
+<p>Not every card has every field. Older cards have fewer printed headers. Failed sowings before roughly 2012 were never assigned accession numbers. The propagation text block, the most important field for downstream analysis, is present on 97% of cards.</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Field</th>
+<th>Filled</th>
+<th>%</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>propagation_text</td>
+<td>12,240</td>
+<td>97%</td>
+</tr>
+<tr class="even">
+<td>date_received</td>
+<td>11,519</td>
+<td>92%</td>
+</tr>
+<tr class="odd">
+<td>received_as (material type)</td>
+<td>11,512</td>
+<td>92%</td>
+</tr>
+<tr class="even">
+<td>botanical_name</td>
+<td>11,496</td>
+<td>92%</td>
+</tr>
+<tr class="odd">
+<td>family</td>
+<td>11,459</td>
+<td>91%</td>
+</tr>
+<tr class="even">
+<td>wanted_for_area</td>
+<td>11,456</td>
+<td>91%</td>
+</tr>
+<tr class="odd">
+<td>quantity</td>
+<td>11,444</td>
+<td>91%</td>
+</tr>
+<tr class="even">
+<td>accession_number</td>
+<td>10,759</td>
+<td>86%</td>
+</tr>
+<tr class="odd">
+<td>present_location</td>
+<td>10,696</td>
+<td>85%</td>
+</tr>
+<tr class="even">
+<td>max_quantity</td>
+<td>10,554</td>
+<td>84%</td>
+</tr>
+<tr class="odd">
+<td>source</td>
+<td>10,266</td>
+<td>82%</td>
+</tr>
+<tr class="even">
+<td>source_info</td>
+<td>9,474</td>
+<td>75%</td>
+</tr>
+<tr class="odd">
+<td>labels_requested</td>
+<td>9,009</td>
+<td>72%</td>
+</tr>
+<tr class="even">
+<td>collection_info</td>
+<td>7,976</td>
+<td>64%</td>
+</tr>
+<tr class="odd">
+<td>geocode</td>
+<td>7,907</td>
+<td>63%</td>
+</tr>
+<tr class="even">
+<td>curators_info</td>
+<td>5,016</td>
+<td>40%</td>
+</tr>
+<tr class="odd">
+<td>collector_number</td>
+<td>4,765</td>
+<td>38%</td>
+</tr>
+<tr class="even">
+<td>distribution</td>
+<td>4,794</td>
+<td>38%</td>
+</tr>
+<tr class="odd">
+<td>other_number</td>
+<td>4,368</td>
+<td>35%</td>
+</tr>
+<tr class="even">
+<td>parent_accession</td>
+<td>1,579</td>
+<td>13%</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="material-types" class="level2">
+<h2 class="anchored" data-anchor-id="material-types">Material types</h2>
+<p>The <code>received_as</code> field records what material arrived at the nursery. Values are as transcribed from the cards, with minor case normalization applied here for readability.</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Material</th>
+<th>Count</th>
+<th>%</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Seed</td>
+<td>8,443</td>
+<td>67%</td>
+</tr>
+<tr class="even">
+<td>Unrooted cuttings (URCU)</td>
+<td>2,032</td>
+<td>16%</td>
+</tr>
+<tr class="odd">
+<td>Plant (PLNT)</td>
+<td>252</td>
+<td>2%</td>
+</tr>
+<tr class="even">
+<td>Softwood/semi-hardwood cuttings</td>
+<td>240</td>
+<td>2%</td>
+</tr>
+<tr class="odd">
+<td>Spore</td>
+<td>66</td>
+<td>0.5%</td>
+</tr>
+<tr class="even">
+<td>Bulb</td>
+<td>41</td>
+<td>0.3%</td>
+</tr>
+<tr class="odd">
+<td>Division</td>
+<td>23</td>
+<td>0.2%</td>
+</tr>
+<tr class="even">
+<td>Other (budplates, scions, etc.)</td>
+<td>30</td>
+<td>0.2%</td>
+</tr>
+<tr class="odd">
+<td>Not recorded</td>
+<td>1,430</td>
+<td>11%</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="accession-numbers" class="level2">
+<h2 class="anchored" data-anchor-id="accession-numbers">Accession numbers</h2>
+<p>The pipeline extracted 14,571 accession number entries across all cards, resolving to 13,277 unique normalized accessions. Some cards reference multiple accessions (multi-sowing tables). The 14% of cards without an accession number are primarily pre-2012 failed sowings that were never assigned one.</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Format</th>
+<th>Count</th>
+<th>%</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Legacy (pre-IrisBG)</td>
+<td>9,856</td>
+<td>68%</td>
+</tr>
+<tr class="even">
+<td>Unknown/partial</td>
+<td>2,791</td>
+<td>19%</td>
+</tr>
+<tr class="odd">
+<td>Modern (post-IrisBG)</td>
+<td>1,623</td>
+<td>11%</td>
+</tr>
+<tr class="even">
+<td>Modern item-level</td>
+<td>283</td>
+<td>2%</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="rag-assisted-extraction" class="level2">
+<h2 class="anchored" data-anchor-id="rag-assisted-extraction">RAG-assisted extraction</h2>
+<p>92% of cards (11,524) received taxonomy hints from the RAG index during extraction, averaging 458 tokens of context per card with a retrieval latency of 14 ms. The RAG step provides the model with accession-to-taxon mappings from the institution’s database, improving accession number and botanical name accuracy without additional model calls.</p>
+</section>
+<section id="accuracy" class="level2">
+<h2 class="anchored" data-anchor-id="accuracy">Accuracy</h2>
+<p>Field-level accuracy scoring against a manually reviewed sample has not yet been completed. The earlier prototype (OpenCV alignment + Google Cloud Vision with dynamic template matching) reached roughly <strong>90-98%</strong> accuracy on the fields it targeted, useful as a reference point, though it required cloud calls, an internet connection, and far narrower scope.</p>
+<p>A formal accuracy assessment is planned: a stratified sample of cards (old vs. new, seed vs.&nbsp;cutting, single vs.&nbsp;multi-sowing) scored against ground-truth transcriptions.</p>
 </section>
 <section id="honest-failure-modes" class="level2">
 <h2 class="anchored" data-anchor-id="honest-failure-modes">Honest failure modes</h2>
 <p>Credibility comes from naming what doesn’t work:</p>
 <ul>
-<li><strong>Condensed multi-sowing tables</strong> — the hardest case; several accessions on one card, easy to merge or drop rows.</li>
-<li><strong>Faded carbon copies</strong> — low-contrast old cards degrade transcription.</li>
-<li><strong>Ambiguous handwriting on accession digits</strong> — a single misread digit produces a plausible-but-wrong accession; the RAG validation step catches many but not all of these.</li>
-<li><strong>No-accession cards</strong> — pre-2012 failed sowings rely on taxon-name matching, which inherits any error in the taxon transcription.</li>
+<li><strong>Condensed multi-sowing tables</strong>: the hardest case. Several accessions on one card in a hand-drawn table format. Easy to merge or drop rows. These represent approximately 17% of cards with unknown extraction outcomes.</li>
+<li><strong>Faded carbon copies</strong>: low-contrast old cards (pre-1980s triplicates) degrade transcription quality.</li>
+<li><strong>Ambiguous handwriting on accession digits</strong>: a single misread digit produces a plausible-but-wrong accession. The RAG validation step catches many of these, but not all.</li>
+<li><strong>No-accession cards</strong>: pre-2012 failed sowings rely on taxon-name matching, which inherits any error in the taxon transcription.</li>
+<li><strong>Family name case inconsistency</strong>: the model transcribes family names as written on the card, producing duplicates like “Ericaceae” and “ERICACEAE.” Normalizable in post-processing, but present in the raw output.</li>
 </ul>
-<blockquote class="blockquote">
-<p><em>(Placeholder — add 2–3 example failure cards from <code>data/failed-card-samples/</code> with a one-line note on each, once cleared for public sharing.)</em></p>
-</blockquote>
 
 
 </section>

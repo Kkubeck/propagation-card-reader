@@ -2,49 +2,136 @@
 title: "Results"
 ---
 
-> **Status:** the figures below are placeholders pending the final scoring run.
-> Numbers will be pulled directly from `cards.db`, not hand-entered. Treat the
-> bracketed values as TODOs.
-
 ## Scale
+
+The complete archive has been processed. Every propagation card in the collection,
+spanning roughly fifty years of nursery records, has been read by the pipeline.
 
 | Metric | Value |
 |---|---|
-| Source PDFs processed | 514 |
-| Individual cards extracted | ~12,700 |
-| Fields captured per card | 20 |
+| Source PDFs processed | 513 |
+| Total cards extracted | 12,762 |
+| Successfully processed | 12,557 |
+| Failed or errored | 153 |
+| Excluded (unpaired duplex pages) | 52 |
+| **Success rate** | **98.8%** |
+| Fields captured per card | 22 |
 | Hardware | Apple Silicon Mac (M4, 24 GB), no internet |
 | Model | `qwen2.5vl:7b` via Ollama |
 | Render resolution | 175 DPI |
+| Avg processing time per card | 55.8 seconds |
+| Total processing time | 194.5 hours |
+
+The 153 failures were primarily empty model responses (117 JSON parse errors)
+and intermittent Ollama server errors (29). These are retryable, not
+architectural.
+
+## Card types
+
+| Type | Count | % |
+|---|---|---|
+| Single-face cards | 10,586 | 83% |
+| Duplex (front and back) | 2,176 | 17% |
+
+The 52 excluded cards come from duplex PDFs with odd page counts where
+front/back pairing was not possible.
+
+## Field completeness
+
+Not every card has every field. Older cards have fewer printed headers. Failed
+sowings before roughly 2012 were never assigned accession numbers. The
+propagation text block, the most important field for downstream analysis, is
+present on 97% of cards.
+
+| Field | Filled | % |
+|---|---|---|
+| propagation_text | 12,240 | 97% |
+| date_received | 11,519 | 92% |
+| received_as (material type) | 11,512 | 92% |
+| botanical_name | 11,496 | 92% |
+| family | 11,459 | 91% |
+| wanted_for_area | 11,456 | 91% |
+| quantity | 11,444 | 91% |
+| accession_number | 10,759 | 86% |
+| present_location | 10,696 | 85% |
+| max_quantity | 10,554 | 84% |
+| source | 10,266 | 82% |
+| source_info | 9,474 | 75% |
+| labels_requested | 9,009 | 72% |
+| collection_info | 7,976 | 64% |
+| geocode | 7,907 | 63% |
+| curators_info | 5,016 | 40% |
+| collector_number | 4,765 | 38% |
+| distribution | 4,794 | 38% |
+| other_number | 4,368 | 35% |
+| parent_accession | 1,579 | 13% |
+
+## Material types
+
+The `received_as` field records what material arrived at the nursery.
+Values are as transcribed from the cards, with minor case normalization applied
+here for readability.
+
+| Material | Count | % |
+|---|---|---|
+| Seed | 8,443 | 67% |
+| Unrooted cuttings (URCU) | 2,032 | 16% |
+| Plant (PLNT) | 252 | 2% |
+| Softwood/semi-hardwood cuttings | 240 | 2% |
+| Spore | 66 | 0.5% |
+| Bulb | 41 | 0.3% |
+| Division | 23 | 0.2% |
+| Other (budplates, scions, etc.) | 30 | 0.2% |
+| Not recorded | 1,430 | 11% |
+
+## Accession numbers
+
+The pipeline extracted 14,571 accession number entries across all cards,
+resolving to 13,277 unique normalized accessions. Some cards reference multiple
+accessions (multi-sowing tables). The 14% of cards without an accession number
+are primarily pre-2012 failed sowings that were never assigned one.
+
+| Format | Count | % |
+|---|---|---|
+| Legacy (pre-IrisBG) | 9,856 | 68% |
+| Unknown/partial | 2,791 | 19% |
+| Modern (post-IrisBG) | 1,623 | 11% |
+| Modern item-level | 283 | 2% |
+
+## RAG-assisted extraction
+
+92% of cards (11,524) received taxonomy hints from the RAG index during
+extraction, averaging 458 tokens of context per card with a retrieval latency
+of 14 ms. The RAG step provides the model with accession-to-taxon mappings from
+the institution's database, improving accession number and botanical name
+accuracy without additional model calls.
 
 ## Accuracy
 
-> *(Placeholder — fill from the scored sample.)*
+Field-level accuracy scoring against a manually reviewed sample has not yet been
+completed. The earlier prototype (OpenCV alignment + Google Cloud Vision with
+dynamic template matching) reached roughly **90-98%** accuracy on the fields it
+targeted, useful as a reference point, though it required cloud calls, an
+internet connection, and far narrower scope.
 
-| Field group | Cards scored | Field-level accuracy |
-|---|---|---|
-| Accession number | [N] | [xx]% |
-| Taxon name | [N] | [xx]% |
-| Dates | [N] | [xx]% |
-| Treatment / notes | [N] | [xx]% |
-
-The earlier prototype (OpenCV alignment + Google Cloud Vision with dynamic
-template matching) reached roughly **90–98%** on the fields it targeted,
-useful as a reference point, though it required cloud calls, an internet
-connection, and far narrower scope.
+A formal accuracy assessment is planned: a stratified sample of cards (old vs.
+new, seed vs. cutting, single vs. multi-sowing) scored against ground-truth
+transcriptions.
 
 ## Honest failure modes
 
 Credibility comes from naming what doesn't work:
 
-- **Condensed multi-sowing tables** — the hardest case; several accessions on
-  one card, easy to merge or drop rows.
-- **Faded carbon copies** — low-contrast old cards degrade transcription.
-- **Ambiguous handwriting on accession digits** — a single misread digit
-  produces a plausible-but-wrong accession; the RAG validation step catches
-  many but not all of these.
-- **No-accession cards** — pre-2012 failed sowings rely on taxon-name matching,
+- **Condensed multi-sowing tables**: the hardest case. Several accessions on
+  one card in a hand-drawn table format. Easy to merge or drop rows. These
+  represent approximately 17% of cards with unknown extraction outcomes.
+- **Faded carbon copies**: low-contrast old cards (pre-1980s triplicates)
+  degrade transcription quality.
+- **Ambiguous handwriting on accession digits**: a single misread digit
+  produces a plausible-but-wrong accession. The RAG validation step catches
+  many of these, but not all.
+- **No-accession cards**: pre-2012 failed sowings rely on taxon-name matching,
   which inherits any error in the taxon transcription.
-
-> *(Placeholder — add 2–3 example failure cards from `data/failed-card-samples/`
-> with a one-line note on each, once cleared for public sharing.)*
+- **Family name case inconsistency**: the model transcribes family names as
+  written on the card, producing duplicates like "Ericaceae" and "ERICACEAE."
+  Normalizable in post-processing, but present in the raw output.

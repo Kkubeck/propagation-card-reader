@@ -404,6 +404,50 @@ def normalize_date_received(conn: sqlite3.Connection) -> tuple[int, int]:
     return updated, skipped
 
 
+# --- Accession numbers: strip provenance annotations, reclassify format ---
+
+PROVENANCE_TAIL_RE = re.compile(r"\*.*$")
+LEGACY_RE = re.compile(r"^\d{5,6}-\d{3,4}-\d{2,4}(?:\.\d{1,2})?$")
+MODERN_RE = re.compile(r"^\d{4}-\d{3,5}(?:\.\d{1,2})?$")
+
+
+def _classify_accession(accession: str) -> str:
+    if MODERN_RE.fullmatch(accession):
+        return "modern_item" if "." in accession else "modern"
+    if LEGACY_RE.fullmatch(accession):
+        return "legacy_item" if "." in accession else "legacy"
+    return "unknown"
+
+
+def normalize_accession_numbers(conn: sqlite3.Connection) -> tuple[int, int]:
+    """Strip provenance annotations and reclassify format_type. Returns (updated, reclassified)."""
+    rows = conn.execute(
+        "SELECT id, accession_number, normalized_accession_number, format_type "
+        "FROM accession_numbers WHERE accession_number IS NOT NULL"
+    ).fetchall()
+    updated = 0
+    reclassified = 0
+    for row in rows:
+        raw = row["accession_number"]
+        old_norm = row["normalized_accession_number"]
+        old_fmt = row["format_type"]
+
+        new_norm = raw.replace(" ", "").upper()
+        new_norm = PROVENANCE_TAIL_RE.sub("", new_norm)
+        new_fmt = _classify_accession(new_norm)
+
+        if new_norm != old_norm or new_fmt != old_fmt:
+            conn.execute(
+                "UPDATE accession_numbers SET normalized_accession_number = ?, format_type = ? WHERE id = ?",
+                (new_norm, new_fmt, row["id"]),
+            )
+            updated += 1
+            if new_fmt != old_fmt:
+                reclassified += 1
+    conn.commit()
+    return updated, reclassified
+
+
 # --- Run all ---
 
 def normalize_all(conn: sqlite3.Connection, verbose: bool = False) -> dict:
@@ -434,5 +478,11 @@ def normalize_all(conn: sqlite3.Connection, verbose: bool = False) -> dict:
     results["date_received_skipped"] = skipped
     if verbose:
         print(f"  date_received → ISO: {updated} updated, {skipped} skipped")
+
+    updated, reclassified = normalize_accession_numbers(conn)
+    results["accession_numbers_updated"] = updated
+    results["accession_numbers_reclassified"] = reclassified
+    if verbose:
+        print(f"  accession_numbers → strip provenance, reclassify: {updated} updated, {reclassified} reclassified")
 
     return results

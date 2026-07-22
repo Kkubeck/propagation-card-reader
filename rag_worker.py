@@ -21,8 +21,10 @@ from table_parser import parse_table_text, is_table_text
 from worker import extract_page_image, parse_json_response
 
 
-LEGACY_RE = re.compile(r"^(?:0\d{5}-\d{4}-\d{4}|\d{5}-\d{3}-\d{2})(?:\.\d{1,2})?$")
-MODERN_RE = re.compile(r"^\d{4}-\d{4,5}(?:\.\d{1,2})?$")
+LEGACY_RE = re.compile(r"^\d{5,6}-\d{3,4}-\d{2,4}(?:\.\d{1,2})?$")
+MODERN_RE = re.compile(r"^\d{4}-\d{3,5}(?:\.\d{1,2})?$")
+# Provenance annotations: *C(EX-75), *EX-00, *(EX-80*C), etc.
+PROVENANCE_TAIL_RE = re.compile(r"\*.*$")
 
 
 def call_ollama_with_prompt(ollama_url: str, model: str, image_b64: str, prompt_text: str,
@@ -105,7 +107,9 @@ class RAGWorker:
 
     @staticmethod
     def _normalize_accession_value(accession: str) -> str:
-        return accession.replace(" ", "").upper()
+        val = accession.replace(" ", "").upper()
+        val = PROVENANCE_TAIL_RE.sub("", val)
+        return val
 
     @staticmethod
     def _classify_accession(accession: str) -> str:

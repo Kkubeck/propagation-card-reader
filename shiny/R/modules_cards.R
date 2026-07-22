@@ -88,7 +88,7 @@ cards_server <- function(id, conn, validation, images_dir = NULL, pdf_roots = ch
     output$cards_table <- DT::renderDT({
       df <- cards_df()
       shiny::validate(shiny::need(nrow(df) > 0, "No cards match the current filters."))
-      display_cols <- c("card_id", "status", "accession_number", "botanical_name", "family", "received_as", "date_received", "all_accession_numbers", "processing_time_s")
+      display_cols <- c("card_id", "status", "card_face", "accession_number", "botanical_name", "family", "received_as", "date_received", "all_accession_numbers", "processing_time_s")
       DT::datatable(
         df[, intersect(display_cols, names(df)), drop = FALSE],
         selection = "single",
@@ -105,6 +105,22 @@ cards_server <- function(id, conn, validation, images_dir = NULL, pdf_roots = ch
       df[row_index, , drop = FALSE]
     })
 
+    render_card_image <- function(pdf_path_val, page_num_val, label) {
+      if (is.null(pdf_path_val) || !nzchar(pdf_path_val) || is.null(page_num_val) || is.na(page_num_val)) {
+        return(NULL)
+      }
+      resolved <- resolve_pdf_path(pdf_path_val, pdf_roots)
+      if (is.null(resolved)) return(NULL)
+      if (!has_pdftools()) return(NULL)
+      tmp_png <- render_pdf_page(resolved, page_num_val)
+      if (is.null(tmp_png)) return(NULL)
+      png_data <- base64enc::dataURI(file = tmp_png, mime = "image/png")
+      shiny::tagList(
+        shiny::p(shiny::strong(label)),
+        shiny::tags$img(src = png_data, style = "max-width: 100%; border: 1px solid #ccc;")
+      )
+    }
+
     output$card_image_ui <- shiny::renderUI({
       if (!isTRUE(input$show_image)) return(shiny::div())
       row <- selected_card()
@@ -118,25 +134,41 @@ cards_server <- function(id, conn, validation, images_dir = NULL, pdf_roots = ch
         return(shiny::p(shiny::em("No PDF reference for this card.")))
       }
 
-      resolved <- resolve_pdf_path(pdf_path_val, pdf_roots)
-      if (is.null(resolved)) {
-        return(shiny::p(shiny::em(sprintf("PDF not found: %s", basename(pdf_path_val)))))
-      }
-
       if (!has_pdftools()) {
         return(shiny::p(shiny::em("Install the 'pdftools' and 'png' packages to view card images.")))
       }
 
-      tmp_png <- render_pdf_page(resolved, page_num_val)
-      if (is.null(tmp_png)) {
-        return(shiny::p(shiny::em("Could not render PDF page.")))
+      card_face <- card$card_face[[1]]
+      duplex_flag <- card$duplex_flag[[1]]
+      pair_id_val <- card$pair_id[[1]]
+      is_duplex <- isTRUE(duplex_flag == 1) && !is.null(pair_id_val) && !is.na(pair_id_val)
+
+      if (!is_duplex) {
+        img <- render_card_image(pdf_path_val, page_num_val, sprintf("%s, page %s", basename(pdf_path_val), page_num_val))
+        return(if (is.null(img)) shiny::p(shiny::em("Could not render PDF page.")) else img)
       }
 
-      png_data <- base64enc::dataURI(file = tmp_png, mime = "image/png")
-      shiny::tagList(
-        shiny::p(shiny::strong(sprintf("%s, page %s", basename(pdf_path_val), page_num_val))),
-        shiny::tags$img(src = png_data, style = "max-width: 100%; border: 1px solid #ccc;")
+      db <- tryCatch(conn(), error = function(e) NULL)
+      if (is.null(db)) {
+        img <- render_card_image(pdf_path_val, page_num_val, sprintf("%s, page %s", basename(pdf_path_val), page_num_val))
+        return(if (is.null(img)) shiny::p(shiny::em("Could not render PDF page.")) else img)
+      }
+
+      other_face <- if (identical(card_face, "front")) "back" else "front"
+      paired <- DBI::dbGetQuery(db,
+        "SELECT pdf_path, page_num, card_face FROM cards WHERE pdf_filename = ? AND pair_id = ? AND card_face = ? LIMIT 1",
+        params = list(basename(pdf_path_val), as.integer(pair_id_val), other_face)
       )
+
+      front_path <- if (identical(card_face, "front")) pdf_path_val else if (nrow(paired) > 0) paired$pdf_path[[1]] else NULL
+      front_page <- if (identical(card_face, "front")) page_num_val else if (nrow(paired) > 0) paired$page_num[[1]] else NULL
+      back_path  <- if (identical(card_face, "back"))  pdf_path_val else if (nrow(paired) > 0) paired$pdf_path[[1]] else NULL
+      back_page  <- if (identical(card_face, "back"))  page_num_val else if (nrow(paired) > 0) paired$page_num[[1]] else NULL
+
+      front_img <- render_card_image(front_path, front_page, sprintf("FRONT - %s, page %s", basename(front_path %||% ""), front_page))
+      back_img  <- render_card_image(back_path, back_page, sprintf("BACK - %s, page %s", basename(back_path %||% ""), back_page))
+
+      shiny::tagList(front_img, shiny::hr(), back_img)
     })
 
     output$card_detail_ui <- shiny::renderUI({

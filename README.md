@@ -2,6 +2,8 @@
 
 A Python tool for extracting structured data from digitized handwritten propagation cards using local vision-language models. Built for botanical gardens with paper archives and zero budget.
 
+**Full archive processed:** 12,700+ cards spanning 50 years of institutional propagation records, transcribed entirely on a single laptop with no cloud services.
+
 [![View Project Website](https://img.shields.io/badge/View%20Website-Live-blue)](https://kkubeck.github.io/propagation-card-reader/)
 
 **For the full story, methodology, and accessible explanations of the technology, visit the [project website](https://kkubeck.github.io/propagation-card-reader/).**
@@ -141,7 +143,7 @@ For the full narrative behind each version, see [The Journey](https://kkubeck.gi
 |---|---|---|---|
 | **v1** | Pre-git | Custom training pipeline (scikit-learn, PyTorch) | Abandoned: variation across 50 years of handwriting exceeded feasible training data |
 | **v2** | Sep-Oct 2025 | OpenCV alignment + Google Cloud Vision API | Abandoned: 90-98% accuracy but cloud cost, data sovereignty, and layout brittleness |
-| **v3** | May 2026 | Local VLM (Gemma 3, then Qwen 2.5-VL 7B) via Ollama | **Current**: full archive processed on a MacBook, no internet required |
+| **v3** | May 2026 | Local VLM (Gemma 3, then Qwen 2.5-VL 7B) via Ollama | **Complete**: 12,700+ cards processed on a MacBook, no internet required |
 | **v4** | May 2026 | Privacy redaction layer (opt-in, post-hoc) | Active: conservative PII detection with audit trail |
 
 ---

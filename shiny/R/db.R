@@ -199,9 +199,9 @@ apply_search_filter <- function(search, where_clauses, params) {
     term <- sprintf("%%%s%%", trimmed)
     where_clauses <- c(
       where_clauses,
-      "(e.botanical_name LIKE ? OR e.propagation_text LIKE ? OR e.accession_number LIKE ? OR e.wanted_for_area LIKE ?)"
+      "(e.botanical_name LIKE ? OR e.propagation_text LIKE ? OR e.accession_number LIKE ? OR e.wanted_for_area LIKE ? OR a.accession_number LIKE ? OR a.normalized_accession_number LIKE ?)"
     )
-    params <- c(params, term, term, term, term)
+    params <- c(params, term, term, term, term, term, term)
   }
 
   list(where_clauses = where_clauses, params = params)
@@ -255,6 +255,10 @@ build_extractions_query <- function(conn, where_sql = "") {
     "c.status,",
     "c.error_message,",
     "c.image_path,",
+    "c.duplex_flag,",
+    "c.card_face,",
+    "c.pair_id,",
+    "c.pdf_filename,",
     "e.processing_time_s,",
     "e.model,",
     "e.dpi,",
@@ -305,7 +309,7 @@ get_card_count <- function(conn, status_filter = NULL, search = NULL) {
   }
 
   where_sql <- if (length(where_clauses) > 0) paste("WHERE", paste(where_clauses, collapse = " AND ")) else ""
-  sql <- paste("SELECT count(DISTINCT c.id) AS n FROM cards c LEFT JOIN extractions e ON e.card_id = c.id", where_sql)
+  sql <- paste("SELECT count(DISTINCT c.id) AS n FROM cards c LEFT JOIN extractions e ON e.card_id = c.id LEFT JOIN accession_numbers a ON a.extraction_id = e.id", where_sql)
   if (length(params) > 0) {
     DBI::dbGetQuery(conn, sql, params = params)$n[[1]]
   } else {
